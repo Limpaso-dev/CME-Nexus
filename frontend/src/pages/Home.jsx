@@ -86,7 +86,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-14 px-4 sm:px-6">
+      {/* <section className="py-14 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto bg-white rounded-3xl border shadow-sm p-8 sm:p-10 grid lg:grid-cols-[1fr_1fr] gap-8">
           <div>
             <p className="text-cyan-700 uppercase tracking-[0.22em] text-xs mb-2">Platform Pages</p>
@@ -103,7 +103,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 }
