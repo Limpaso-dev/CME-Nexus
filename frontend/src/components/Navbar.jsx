@@ -1,18 +1,20 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
+const protectedHref = (token, path) => (token ? path : "/register");
 
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
-
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
-
+  const name = localStorage.getItem("name");
   const [open, setOpen] = useState(false);
 
   const logout = () => {
     localStorage.removeItem("token");
-    localStorage.removeItem("role"); // ✅ important
+    localStorage.removeItem("role");
+    localStorage.removeItem("name");
     navigate("/login");
   };
 
@@ -20,81 +22,65 @@ export default function Navbar() {
     setOpen(false);
   }, [location.pathname]);
 
-  const isActive = (path) =>
-    location.pathname === path ? "text-cyan-400" : "";
+  const isActive = (path) => (location.pathname === path ? "text-cyan-300" : "");
 
   return (
-    <nav className="bg-blue-900 text-white shadow-md relative z-50">
+    <nav className="sticky top-0 bg-blue-950/95 backdrop-blur text-white shadow-md relative z-50">
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-
-        {/* BRAND */}
-        <Link to="/" className="text-lg sm:text-xl font-semibold">
-          CME Nexus
+        <Link to="/" className="flex flex-col">
+          <span className="text-xl font-semibold tracking-wide">CME Nexus</span>
+          <span className="text-[11px] text-blue-100">Smarter CME. Seamless Access.</span>
         </Link>
 
-        {/* DESKTOP NAV */}
         <div className="hidden md:flex items-center gap-6 text-sm">
-          <Link to="/" className={`hover:text-cyan-400 ${isActive("/")}`}>
-            Home
-          </Link>
-
-          <Link to="/library" className={`hover:text-cyan-400 ${isActive("/library")}`}>
-            Library
-          </Link>
-
-          {token && (
-            <Link to="/dashboard" className={`hover:text-cyan-400 ${isActive("/dashboard")}`}>
-              Dashboard
-            </Link>
-          )}
-
-          {/* ✅ ADMIN LINK */}
+          <Link to="/" className={`hover:text-cyan-300 ${isActive("/")}`}>Home</Link>
+          <Link to={protectedHref(token, "/library")} className={`hover:text-cyan-300 ${isActive("/library")}`}>Library</Link>
+          <Link to={protectedHref(token, "/dashboard")} className={`hover:text-cyan-300 ${isActive("/dashboard")}`}>Dashboard</Link>
+          <Link to="/about" className={`hover:text-cyan-300 ${isActive("/about")}`}>About</Link>
+          <Link to="/contact" className={`hover:text-cyan-300 ${isActive("/contact")}`}>Contact</Link>
           {role === "admin" && (
-            <Link to="/admin" className={`hover:text-cyan-400 ${isActive("/admin")}`}>
-              Admin
-            </Link>
+            <Link to="/admin" className={`hover:text-cyan-300 ${isActive("/admin")}`}>Upload</Link>
           )}
         </div>
 
-        {/* DESKTOP AUTH */}
         <div className="hidden md:flex items-center gap-4 text-sm">
-          {!token ? (
+          {token ? (
+            <>
+              <span className="text-blue-100">{name ? `Welcome ${name}` : "Signed in"}</span>
+              <button
+                onClick={logout}
+                className="border border-white/60 px-4 py-1.5 rounded hover:bg-white hover:text-blue-950 transition"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
             <>
               <Link
                 to="/login"
-                className="border border-white px-4 py-1.5 rounded hover:bg-white hover:text-blue-900 transition"
+                className="border border-white/60 px-4 py-1.5 rounded hover:bg-white hover:text-blue-950 transition"
               >
                 Login
               </Link>
-
               <Link
                 to="/register"
-                className="bg-cyan-500 px-4 py-1.5 rounded hover:bg-cyan-400 transition"
+                className="bg-cyan-500 px-4 py-1.5 rounded hover:bg-cyan-400 transition text-blue-950 font-medium"
               >
                 Register
               </Link>
             </>
-          ) : (
-            <button
-              onClick={logout}
-              className="border border-white px-4 py-1.5 rounded hover:bg-white hover:text-blue-900 transition"
-            >
-              Logout
-            </button>
           )}
         </div>
 
-        {/* MOBILE BUTTON */}
         <button
-          onClick={() => setOpen(!open)}
+          onClick={() => setOpen((current) => !current)}
           aria-label="Toggle menu"
           className="md:hidden text-2xl"
         >
-          {open ? "✕" : "☰"}
+          {open ? "x" : "="}
         </button>
       </div>
 
-      {/* OVERLAY */}
       {open && (
         <div
           className="fixed inset-0 bg-black/40 md:hidden"
@@ -102,54 +88,30 @@ export default function Navbar() {
         />
       )}
 
-      {/* MOBILE MENU */}
       <div
-        className={`md:hidden absolute top-full left-0 w-full bg-blue-800 px-4 pb-4 space-y-3 text-sm ${
+        className={`md:hidden absolute top-full left-0 w-full bg-blue-900 px-4 pb-4 space-y-3 text-sm ${
           open ? "block" : "hidden"
         }`}
       >
-        <Link to="/" className={`block py-2 ${isActive("/")}`}>
-          Home
-        </Link>
-
-        <Link to="/library" className={`block py-2 ${isActive("/library")}`}>
-          Library
-        </Link>
-
-        {token && (
-          <Link to="/dashboard" className={`block py-2 ${isActive("/dashboard")}`}>
-            Dashboard
-          </Link>
-        )}
-
-        {/* ✅ ADMIN MOBILE */}
+        <Link to="/" className={`block py-2 ${isActive("/")}`}>Home</Link>
+        <Link to={protectedHref(token, "/library")} className={`block py-2 ${isActive("/library")}`}>Library</Link>
+        <Link to={protectedHref(token, "/dashboard")} className={`block py-2 ${isActive("/dashboard")}`}>Dashboard</Link>
+        <Link to="/about" className={`block py-2 ${isActive("/about")}`}>About</Link>
+        <Link to="/contact" className={`block py-2 ${isActive("/contact")}`}>Contact</Link>
         {role === "admin" && (
-          <Link to="/admin" className={`block py-2 ${isActive("/admin")}`}>
-            Admin
-          </Link>
+          <Link to="/admin" className={`block py-2 ${isActive("/admin")}`}>Upload</Link>
         )}
 
-        <div className="pt-3 border-t border-blue-700">
-          {!token ? (
+        <div className="pt-3 border-t border-blue-800">
+          {token ? (
+            <button onClick={logout} className="w-full text-left py-2">Logout</button>
+          ) : (
             <>
-              <Link to="/login" className="block py-2">
-                Login
-              </Link>
-
-              <Link
-                to="/register"
-                className="block bg-cyan-500 px-3 py-2 rounded text-center mt-2"
-              >
+              <Link to="/login" className="block py-2">Login</Link>
+              <Link to="/register" className="block bg-cyan-500 text-blue-950 px-3 py-2 rounded text-center mt-2 font-medium">
                 Register
               </Link>
             </>
-          ) : (
-            <button
-              onClick={logout}
-              className="w-full text-left py-2"
-            >
-              Logout
-            </button>
           )}
         </div>
       </div>

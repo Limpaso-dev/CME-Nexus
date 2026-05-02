@@ -4,103 +4,103 @@ import API from "../services/api";
 
 export default function Register() {
   const navigate = useNavigate();
-
   const [form, setForm] = useState({
     name: "",
     email: "",
-    password: ""
+    password: "",
+    profession: "",
+    organization: ""
   });
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleChange = (field, value) => {
-    setForm({ ...form, [field]: value });
-  };
-
   const submit = async () => {
     if (!form.name || !form.email || !form.password) {
-      return setError("All fields are required");
+      setError("Name, email, and password are required");
+      return;
     }
 
     try {
       setLoading(true);
       setError("");
-
       await API.post("/auth/register", form);
-
-      navigate("/login"); // ✅ no page reload
-
+      navigate("/login");
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Registration failed"
-      );
+      setError(err?.message || "Registration failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4 py-8">
+      <div className="w-full max-w-2xl bg-white p-6 sm:p-8 rounded-3xl shadow-sm border">
+        <p className="text-cyan-700 uppercase tracking-[0.22em] text-xs text-center mb-3">Create Account</p>
+        <h2 className="text-2xl font-semibold text-center mb-3">Access the CME library and dashboard</h2>
+        <p className="text-center text-sm text-gray-600 mb-6">
+          A user must create an account to access the content, track CME progress, and download earned certificates.
+        </p>
 
-      <div className="w-full max-w-md bg-white p-6 sm:p-8 rounded-xl shadow-md border">
+        {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
 
-        {/* TITLE */}
-        <h2 className="text-xl sm:text-2xl font-semibold text-center mb-6">
-          Create Account
-        </h2>
-
-        {/* ERROR */}
-        {error && (
-          <p className="text-red-500 text-sm mb-4 text-center">
-            {error}
-          </p>
-        )}
-
-        {/* FORM */}
-        <div className="space-y-4">
-
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <input
             type="text"
             placeholder="Full Name"
             value={form.name}
-            onChange={(e) => handleChange("name", e.target.value)}
-            className="w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-900"
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            className="w-full border px-3 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-900"
           />
 
           <input
             type="email"
             placeholder="Email Address"
             value={form.email}
-            onChange={(e) => handleChange("email", e.target.value)}
-            className="w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-900"
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            className="w-full border px-3 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-900"
           />
 
           <input
-            type="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={(e) => handleChange("password", e.target.value)}
-            className="w-full border px-3 py-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-900"
+            type="text"
+            placeholder="Profession"
+            value={form.profession}
+            onChange={(e) => setForm({ ...form, profession: e.target.value })}
+            className="w-full border px-3 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-900"
           />
 
-          <button
-            onClick={submit}
-            disabled={loading}
-            className="w-full bg-blue-900 text-white py-2 rounded hover:bg-blue-800 transition text-sm"
-          >
-            {loading ? "Creating account..." : "Register"}
-          </button>
+          <input
+            type="text"
+            placeholder="Organization"
+            value={form.organization}
+            onChange={(e) => setForm({ ...form, organization: e.target.value })}
+            className="w-full border px-3 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-900"
+          />
+
+          <div className="sm:col-span-2">
+            <input
+              type="password"
+              placeholder="Password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              className="w-full border px-3 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-900"
+            />
+          </div>
         </div>
 
-        {/* FOOTER */}
+        <button
+          onClick={submit}
+          disabled={loading}
+          className="w-full mt-6 bg-blue-900 text-white py-3 rounded-xl hover:bg-blue-800 transition text-sm"
+        >
+          {loading ? "Creating account..." : "Register"}
+        </button>
+
         <p className="text-center text-sm text-gray-600 mt-6">
           Already have an account?{" "}
           <Link to="/login" className="text-cyan-600 hover:underline">
             Login
           </Link>
         </p>
-
       </div>
     </div>
   );

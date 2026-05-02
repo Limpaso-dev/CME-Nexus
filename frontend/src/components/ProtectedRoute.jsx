@@ -1,15 +1,14 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 
-export default function ProtectedRoute({ requiredRole }) {
+export default function ProtectedRoute({ requiredRole, redirectTo = "/login" }) {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
+  const location = useLocation();
 
-  // 🔒 Not logged in
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={redirectTo} replace state={{ from: location.pathname }} />;
   }
 
-  // 🔒 Role restriction (if specified)
   if (requiredRole && role !== requiredRole) {
     return <Navigate to="/" replace />;
   }

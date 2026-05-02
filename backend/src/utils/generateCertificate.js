@@ -1,6 +1,7 @@
 import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
 import fs from "fs";
+import path from "path";
 
 // FRONTEND URL (SET IN .env)
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
@@ -10,7 +11,10 @@ export const generateCertificate = async ({
   title,
   certificateId
 }) => {
-  const filePath = `./certificates/${certificateId}.pdf`;
+  const certificatesDir = path.join(process.cwd(), "certificates");
+  const filePath = path.join(certificatesDir, `${certificateId}.pdf`);
+
+  fs.mkdirSync(certificatesDir, { recursive: true });
 
   const doc = new PDFDocument();
   doc.pipe(fs.createWriteStream(filePath));
