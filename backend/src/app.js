@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import path from "path";
 
 import authRoutes from "./routes/auth.routes.js";
 import contentRoutes from "./routes/content.routes.js";
@@ -40,7 +39,6 @@ app.use(cors({
  * ✅ BODY PARSER
  */
 app.use(express.json());
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 /**
  * ✅ SIMPLE LOGGER (VERY USEFUL)

@@ -1,24 +1,4 @@
-import fs from "fs";
-import path from "path";
 import multer from "multer";
-
-const uploadsDir = path.join(process.cwd(), "uploads");
-fs.mkdirSync(uploadsDir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const base = path
-      .basename(file.originalname, ext)
-      .replace(/[^a-zA-Z0-9_-]/g, "-")
-      .slice(0, 60);
-
-    cb(null, `${Date.now()}-${base}${ext}`);
-  }
-});
 
 const allowedMimeTypes = new Set([
   "image/jpeg",
@@ -43,7 +23,7 @@ const fileFilter = (_req, file, cb) => {
 };
 
 export const uploadContentFiles = multer({
-  storage,
+  storage: multer.memoryStorage(),
   fileFilter,
   limits: {
     fileSize: 250 * 1024 * 1024

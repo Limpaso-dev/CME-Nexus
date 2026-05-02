@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Content from "../models/Content.js";
+import { uploadBufferToCloudinary } from "../utils/uploadToCloudinary.js";
 
 const CONTENT_TYPES = new Set(["video", "pdf", "notes"]);
 const LEARNING_MODES = new Set(["session", "course"]);
@@ -56,14 +57,7 @@ const parseModules = (value) => {
     .filter((module) => module.title);
 };
 
-const buildAsset = (file) => ({
-  url: `/uploads/${file.filename}`,
-  originalName: file.originalname,
-  mimeType: file.mimetype,
-  size: file.size
-});
-
-const validateContentPayload = (payload, files = {}, { partial = false } = {}) => {
+const validateContentPayload = (payload, { partial = false } = {}) => {
   const errors = [];
   const data = {};
 
@@ -161,14 +155,6 @@ const validateContentPayload = (payload, files = {}, { partial = false } = {}) =
     } catch {
       errors.push("modules must be valid JSON");
     }
-  }
-
-  if (files.primaryAsset?.[0]) {
-    data.primaryAsset = buildAsset(files.primaryAsset[0]);
-  }
-
-  if (files.attachments?.length) {
-    data.attachments = files.attachments.map(buildAsset);
   }
 
   return { errors, data };
@@ -312,16 +298,39 @@ const validateModeSpecificRequirements = (content) => {
   return null;
 };
 
+const uploadIncomingFiles = async (files = {}) => {
+  const primaryAssetFile = files?.primaryAsset?.[0];
+  const attachmentFiles = files?.attachments || [];
+
+  const [primaryAsset, attachments] = await Promise.all([
+    primaryAssetFile
+      ? uploadBufferToCloudinary(primaryAssetFile, "cme-nexus/primary")
+      : Promise.resolve(null),
+    attachmentFiles.length > 0
+      ? Promise.all(
+          attachmentFiles.map((file) =>
+            uploadBufferToCloudinary(file, "cme-nexus/attachments")
+          )
+        )
+      : Promise.resolve([])
+  ]);
+
+  return { primaryAsset, attachments };
+};
+
 export const createContent = async (req, res) => {
   try {
-    const { errors, data } = validateContentPayload(req.body, req.files || {});
+    const { errors, data } = validateContentPayload(req.body);
 
     if (errors.length > 0) {
       return res.status(400).json({ message: "Invalid content payload", errors });
     }
 
+    const uploadedAssets = await uploadIncomingFiles(req.files);
+
     const content = new Content({
       ...data,
+      ...uploadedAssets,
       createdBy: req.user.id,
       archivedAt: data.isLiveEvent ? null : data.archivedAt ?? null
     });
@@ -383,7 +392,7 @@ export const updateContent = async (req, res) => {
       return res.status(400).json({ message: "Invalid content id" });
     }
 
-    const { errors, data } = validateContentPayload(req.body, req.files || {}, { partial: true });
+    const { errors, data } = validateContentPayload(req.body, { partial: true });
     if (errors.length > 0) {
       return res.status(400).json({ message: "Invalid content payload", errors });
     }
@@ -393,13 +402,16 @@ export const updateContent = async (req, res) => {
       return res.status(404).json({ message: "Content not found" });
     }
 
-    const newAttachments = data.attachments;
-    delete data.attachments;
+    const uploadedAssets = await uploadIncomingFiles(req.files);
 
     Object.assign(content, data);
 
-    if (newAttachments?.length) {
-      content.attachments = [...content.attachments, ...newAttachments];
+    if (uploadedAssets.primaryAsset) {
+      content.primaryAsset = uploadedAssets.primaryAsset;
+    }
+
+    if (uploadedAssets.attachments.length > 0) {
+      content.attachments = [...content.attachments, ...uploadedAssets.attachments];
     }
 
     if (content.isLiveEvent) {

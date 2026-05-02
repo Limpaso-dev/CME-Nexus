@@ -7,6 +7,14 @@ const assetSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
+    publicId: {
+      type: String,
+      default: ""
+    },
+    resourceType: {
+      type: String,
+      default: ""
+    },
     originalName: {
       type: String,
       default: ""
