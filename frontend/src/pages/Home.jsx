@@ -24,6 +24,8 @@ const features = [
 ];
 
 export default function Home() {
+  const token = localStorage.getItem("token");
+
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900">
       <section className="bg-[linear-gradient(135deg,#0f172a_0%,#1e3a8a_55%,#06b6d4_100%)] text-white px-4 sm:px-6 py-16 sm:py-24">
@@ -38,18 +40,37 @@ export default function Home() {
               enhance your skills, and advance patient care. Easy access. Anytime. Anywhere.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Link
-                to="/register"
-                className="bg-white text-blue-950 px-6 py-3 rounded-xl font-medium hover:bg-blue-50 transition text-center"
-              >
-                Create Account
-              </Link>
-              <Link
-                to="/login"
-                className="border border-white/70 px-6 py-3 rounded-xl hover:bg-white hover:text-blue-950 transition text-center"
-              >
-                Sign In
-              </Link>
+              {token ? (
+                <>
+                  <Link
+                    to="/library"
+                    className="bg-white text-blue-950 px-6 py-3 rounded-xl font-medium hover:bg-blue-50 transition text-center"
+                  >
+                    Open Library
+                  </Link>
+                  <Link
+                    to="/dashboard"
+                    className="border border-white/70 px-6 py-3 rounded-xl hover:bg-white hover:text-blue-950 transition text-center"
+                  >
+                    Go to Dashboard
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/register"
+                    className="bg-white text-blue-950 px-6 py-3 rounded-xl font-medium hover:bg-blue-50 transition text-center"
+                  >
+                    Create Account
+                  </Link>
+                  <Link
+                    to="/login"
+                    className="border border-white/70 px-6 py-3 rounded-xl hover:bg-white hover:text-blue-950 transition text-center"
+                  >
+                    Sign In
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 

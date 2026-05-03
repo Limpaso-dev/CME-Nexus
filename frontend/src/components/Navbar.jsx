@@ -77,7 +77,7 @@ export default function Navbar() {
           aria-label="Toggle menu"
           className="md:hidden text-2xl"
         >
-          {open ? "x" : "="}
+          {open ? "x" : "☰"}
         </button>
       </div>
 
