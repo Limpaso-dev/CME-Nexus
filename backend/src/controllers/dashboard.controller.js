@@ -36,22 +36,68 @@ export const getDashboard = async (req, res) => {
 
 export const getAdminDashboard = async (req, res) => {
   try {
-    const [totalUsers, totalContent, completedSessions, totalCertificates, recentUsers, recentContent] = await Promise.all([
-      User.countDocuments(),
-      Content.countDocuments(),
-      Progress.countDocuments({ completed: true }),
-      Certificate.countDocuments(),
-      User.find().select("-password").sort({ createdAt: -1 }).limit(5),
-      Content.find().populate("createdBy", "name email").sort({ createdAt: -1 }).limit(5)
-    ]);
-
-    return res.json({
+    const [
       totalUsers,
       totalContent,
       completedSessions,
       totalCertificates,
       recentUsers,
-      recentContent
+      recentContent,
+      totalAdmins,
+      totalCourses,
+      totalLiveEvents,
+      contentByType,
+      contentByDiscipline
+    ] = await Promise.all([
+      User.countDocuments(),
+      Content.countDocuments(),
+      Progress.countDocuments({ completed: true }),
+      Certificate.countDocuments(),
+      User.find().select("-password").sort({ createdAt: -1 }).limit(5),
+      Content.find().populate("createdBy", "name email").sort({ createdAt: -1 }).limit(5),
+      User.countDocuments({ role: "admin" }),
+      Content.countDocuments({ learningMode: "course" }),
+      Content.countDocuments({ isLiveEvent: true }),
+      Content.aggregate([
+        {
+          $group: {
+            _id: "$contentType",
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { count: -1 } }
+      ]),
+      Content.aggregate([
+        {
+          $match: {
+            discipline: { $nin: [null, ""] }
+          }
+        },
+        {
+          $group: {
+            _id: "$discipline",
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { count: -1 } },
+        { $limit: 6 }
+      ])
+    ]);
+
+    return res.json({
+      totalUsers,
+      totalLearners: totalUsers - totalAdmins,
+      totalAdmins,
+      totalContent,
+      totalCourses,
+      totalSessions: totalContent - totalCourses,
+      totalLiveEvents,
+      completedSessions,
+      totalCertificates,
+      recentUsers,
+      recentContent,
+      contentByType,
+      contentByDiscipline
     });
   } catch (error) {
     console.error("Admin dashboard error:", error);

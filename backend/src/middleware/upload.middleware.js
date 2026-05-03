@@ -6,6 +6,7 @@ const allowedMimeTypes = new Set([
   "image/webp",
   "image/gif",
   "application/pdf",
+  "application/x-pdf",
   "video/mp4",
   "video/webm",
   "video/quicktime",

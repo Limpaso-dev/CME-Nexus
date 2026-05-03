@@ -344,7 +344,9 @@ export const createContent = async (req, res) => {
     return res.status(201).json(content);
   } catch (err) {
     console.error("Create content error:", err);
-    return res.status(500).json({ message: "Failed to create content" });
+    return res.status(500).json({
+      message: err.message || "Failed to create content"
+    });
   }
 };
 
@@ -427,7 +429,9 @@ export const updateContent = async (req, res) => {
     return res.json(content);
   } catch (err) {
     console.error("Update content error:", err);
-    return res.status(500).json({ message: "Failed to update content" });
+    return res.status(500).json({
+      message: err.message || "Failed to update content"
+    });
   }
 };
 
