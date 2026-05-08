@@ -30,6 +30,8 @@ const formatDuration = (seconds) => {
 
 export default function ContentViewer() {
   const { id } = useParams();
+  const role = localStorage.getItem("role");
+  const isAdminViewer = role === "admin";
   const [content, setContent] = useState(null);
   const [comments, setComments] = useState([]);
   const [message, setMessage] = useState("");
@@ -44,6 +46,11 @@ export default function ContentViewer() {
   };
 
   const fetchProgress = async () => {
+    if (isAdminViewer) {
+      setProgress(null);
+      return;
+    }
+
     const progressRes = await API.get("/progress/mine");
     const current = Array.isArray(progressRes)
       ? progressRes.find((entry) => entry.contentId?._id === id)
@@ -79,11 +86,12 @@ export default function ContentViewer() {
   const completedModuleIds = progress?.completedModuleIds || [];
   const allModulesRead = moduleIds.length === 0 || moduleIds.every((moduleId) => completedModuleIds.includes(moduleId));
   const primaryResourceUrl = resolveAssetUrl(content?.primaryAsset?.url || content?.fileUrl);
+  const hasPrimaryResource = Boolean(primaryResourceUrl);
   const requiredSessionSeconds = (content?.minCompletionMinutes || 10) * 60;
   const sessionSecondsSpent = progress?.engagementSeconds || 0;
 
   useEffect(() => {
-    if (!content || content.learningMode !== "course" || activeModuleId) {
+    if (isAdminViewer || !content || content.learningMode !== "course" || activeModuleId) {
       return;
     }
 
@@ -91,10 +99,10 @@ export default function ContentViewer() {
     if (preferredModuleId) {
       setActiveModuleId(preferredModuleId);
     }
-  }, [activeModuleId, content, moduleIds, progress?.lastReadModuleId]);
+  }, [activeModuleId, content, isAdminViewer, moduleIds, progress?.lastReadModuleId]);
 
   useEffect(() => {
-    if (!content) {
+    if (isAdminViewer || !content) {
       return undefined;
     }
 
@@ -133,7 +141,7 @@ export default function ContentViewer() {
     }, TRACKING_INTERVAL_SECONDS * 1000);
 
     return () => window.clearInterval(timer);
-  }, [activeModuleId, completedModuleIds, content, id, progress?.completed]);
+  }, [activeModuleId, completedModuleIds, content, id, isAdminViewer, progress?.completed]);
 
   const markComplete = async () => {
     try {
@@ -200,33 +208,44 @@ export default function ContentViewer() {
             <Meta label="Session Date" value={formatDate(content.eventDate)} />
             <Meta label="Credits" value={`${content.credits} CME`} />
             <Meta label="Type" value={content.contentType} />
-            <Meta label="Progress" value={`${progress?.percentComplete || 0}%`} />
+            {!isAdminViewer && <Meta label="Progress" value={`${progress?.percentComplete || 0}%`} />}
           </div>
 
-          <div className="rounded-2xl border bg-slate-50 p-5 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
-              <div>
-                <h2 className="font-semibold text-gray-900">Learning progress</h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Credits unlock only after the required engagement time is met.
-                </p>
+          {!isAdminViewer && (
+            <div className="rounded-2xl border bg-slate-50 p-5 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                <div>
+                  <h2 className="font-semibold text-gray-900">Learning progress</h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Credits unlock only after the required engagement time is met.
+                  </p>
+                </div>
+                <span className="text-sm font-medium text-blue-900">
+                  {progress?.percentComplete || 0}% complete
+                </span>
               </div>
-              <span className="text-sm font-medium text-blue-900">
-                {progress?.percentComplete || 0}% complete
-              </span>
+              <div className="h-3 rounded-full bg-white border overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-900 transition-all"
+                  style={{ width: `${progress?.percentComplete || 0}%` }}
+                />
+              </div>
+              <p className="text-sm text-gray-600 mt-3">
+                {content.learningMode === "course"
+                  ? "Complete each module's guided learning time before claiming CME credit."
+                  : `Required learning time: ${content.minCompletionMinutes || 10} minutes. Tracked so far: ${formatDuration(sessionSecondsSpent)}.`}
+              </p>
             </div>
-            <div className="h-3 rounded-full bg-white border overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-900 transition-all"
-                style={{ width: `${progress?.percentComplete || 0}%` }}
-              />
+          )}
+
+          {isAdminViewer && (
+            <div className="rounded-2xl border bg-slate-50 p-5 mb-6">
+              <h2 className="font-semibold text-gray-900">Admin preview</h2>
+              <p className="text-sm text-gray-600 mt-2">
+                This account can review course content, but learner progress, credits, and completion are disabled for admins.
+              </p>
             </div>
-            <p className="text-sm text-gray-600 mt-3">
-              {content.learningMode === "course"
-                ? `Complete each module's guided learning time before claiming CME credit.`
-                : `Required learning time: ${content.minCompletionMinutes || 10} minutes. Tracked so far: ${formatDuration(sessionSecondsSpent)}.`}
-            </p>
-          </div>
+          )}
 
           {content.learningMode === "course" && content.modules.length > 0 ? (
             <div className="space-y-4 mb-6">
@@ -253,31 +272,35 @@ export default function ContentViewer() {
                           Required time: {module.estimatedMinutes || 5} min
                         </p>
                       </div>
-                      <button
-                        onClick={() => setActiveModuleId(moduleId)}
-                        className={`px-4 py-2 rounded-xl text-sm ${
-                          isActive
-                            ? "bg-blue-900 text-white"
-                            : isRead
-                              ? "bg-green-100 text-green-800"
-                              : "bg-cyan-500 text-blue-950 hover:bg-cyan-400"
-                        }`}
-                      >
-                        {isActive ? "Tracking now" : isRead ? "Completed" : "Start learning"}
-                      </button>
+                      {!isAdminViewer && (
+                        <button
+                          onClick={() => setActiveModuleId(moduleId)}
+                          className={`px-4 py-2 rounded-xl text-sm ${
+                            isActive
+                              ? "bg-blue-900 text-white"
+                              : isRead
+                                ? "bg-green-100 text-green-800"
+                                : "bg-cyan-500 text-blue-950 hover:bg-cyan-400"
+                          }`}
+                        >
+                          {isActive ? "Tracking now" : isRead ? "Completed" : "Start learning"}
+                        </button>
+                      )}
                     </div>
 
-                    <div className="mt-4">
-                      <div className="h-2 rounded-full bg-white border overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-900 transition-all"
-                          style={{ width: `${modulePercent}%` }}
-                        />
+                    {!isAdminViewer && (
+                      <div className="mt-4">
+                        <div className="h-2 rounded-full bg-white border overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-900 transition-all"
+                            style={{ width: `${modulePercent}%` }}
+                          />
+                        </div>
+                        <p className="text-sm text-gray-600 mt-2">
+                          {formatDuration(trackedModuleSeconds)} of {formatDuration(requiredModuleSeconds)} tracked
+                        </p>
                       </div>
-                      <p className="text-sm text-gray-600 mt-2">
-                        {formatDuration(trackedModuleSeconds)} of {formatDuration(requiredModuleSeconds)} tracked
-                      </p>
-                    </div>
+                    )}
 
                     <p className="text-sm text-gray-700 leading-6 mt-4 whitespace-pre-wrap">
                       {module.content || "No module reading text provided."}
@@ -349,32 +372,54 @@ export default function ContentViewer() {
           )}
 
           <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={markComplete}
-              disabled={
-                content.learningMode === "course"
-                  ? !allModulesRead
-                  : sessionSecondsSpent < requiredSessionSeconds
-              }
-              className={`px-5 py-3 rounded-xl transition ${
-                ((content.learningMode === "course" && !allModulesRead) ||
-                  (content.learningMode !== "course" && sessionSecondsSpent < requiredSessionSeconds))
-                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                  : "bg-blue-900 text-white hover:bg-blue-800"
-              }`}
-            >
-              Mark as completed
-            </button>
-            {primaryResourceUrl && (
-              <a
-                href={primaryResourceUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="border border-blue-200 text-blue-900 px-5 py-3 rounded-xl hover:bg-blue-50 transition text-center"
+            {!isAdminViewer && (
+              <button
+                onClick={markComplete}
+                disabled={
+                  content.learningMode === "course"
+                    ? !allModulesRead
+                    : sessionSecondsSpent < requiredSessionSeconds
+                }
+                className={`px-5 py-3 rounded-xl transition ${
+                  ((content.learningMode === "course" && !allModulesRead) ||
+                    (content.learningMode !== "course" && sessionSecondsSpent < requiredSessionSeconds))
+                    ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                    : "bg-blue-900 text-white hover:bg-blue-800"
+                }`}
               >
-                Open primary resource
-              </a>
+                Mark as completed
+              </button>
             )}
+            {content.contentType === "pdf" ? (
+              <a
+                href={hasPrimaryResource ? primaryResourceUrl : undefined}
+                target={hasPrimaryResource ? "_blank" : undefined}
+                rel={hasPrimaryResource ? "noreferrer" : undefined}
+                download={hasPrimaryResource ? true : undefined}
+                aria-disabled={!hasPrimaryResource}
+                className={`px-5 py-3 rounded-xl transition text-center ${
+                  hasPrimaryResource
+                    ? "border border-blue-200 text-blue-900 hover:bg-blue-50"
+                    : "bg-gray-200 text-gray-500 cursor-not-allowed pointer-events-none"
+                }`}
+              >
+                Download PDF
+              </a>
+            ) : content.contentType === "notes" ? (
+              <a
+                href={hasPrimaryResource ? primaryResourceUrl : undefined}
+                target={hasPrimaryResource ? "_blank" : undefined}
+                rel={hasPrimaryResource ? "noreferrer" : undefined}
+                aria-disabled={!hasPrimaryResource}
+                className={`px-5 py-3 rounded-xl transition text-center ${
+                  hasPrimaryResource
+                    ? "border border-blue-200 text-blue-900 hover:bg-blue-50"
+                    : "bg-gray-200 text-gray-500 cursor-not-allowed pointer-events-none"
+                }`}
+              >
+                Open notes
+              </a>
+            ) : null}
           </div>
 
           {feedback && (
@@ -390,20 +435,30 @@ export default function ContentViewer() {
             Ask questions, discuss cases, and interact around the learning material.
           </p>
 
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            rows={4}
-            className="border w-full px-3 py-3 rounded-xl mb-3 text-sm resize-none"
-            placeholder="Ask a question or share an insight..."
-          />
+          {!isAdminViewer && (
+            <>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={4}
+                className="border w-full px-3 py-3 rounded-xl mb-3 text-sm resize-none"
+                placeholder="Ask a question or share an insight..."
+              />
 
-          <button
-            onClick={postComment}
-            className="w-full bg-cyan-500 text-blue-950 px-4 py-3 rounded-xl hover:bg-cyan-400 text-sm font-medium"
-          >
-            Post discussion
-          </button>
+              <button
+                onClick={postComment}
+                className="w-full bg-cyan-500 text-blue-950 px-4 py-3 rounded-xl hover:bg-cyan-400 text-sm font-medium"
+              >
+                Post discussion
+              </button>
+            </>
+          )}
+
+          {isAdminViewer && (
+            <div className="rounded-2xl border bg-slate-50 px-4 py-4 text-sm text-gray-600">
+              Admin accounts can review the discussion thread here, but posting is disabled in preview mode.
+            </div>
+          )}
 
           <div className="space-y-4 mt-6">
             {comments.map((comment) => (

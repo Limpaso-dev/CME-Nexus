@@ -24,7 +24,7 @@ export default function Login() {
       localStorage.setItem("role", res.role);
       localStorage.setItem("name", res.name);
 
-      navigate(location.state?.from || "/dashboard");
+      navigate(location.state?.from || "/");
     } catch (err) {
       setError(err?.message || "Login failed");
     } finally {

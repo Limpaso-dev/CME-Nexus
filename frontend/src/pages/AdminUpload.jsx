@@ -27,18 +27,13 @@ export default function AdminUpload() {
   const [form, setForm] = useState(emptyForm);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [dashboard, setDashboard] = useState(null);
   const [content, setContent] = useState([]);
+  const [deletingId, setDeletingId] = useState("");
 
   const fetchAdminData = async () => {
     try {
-      const [dash, contentData] = await Promise.all([
-        API.get("/dashboard/admin"),
-        API.get("/content")
-      ]);
-
-      setDashboard(dash);
-      setContent(Array.isArray(contentData) ? contentData.slice(0, 6) : []);
+      const contentData = await API.get("/content");
+      setContent(Array.isArray(contentData) ? contentData : []);
     } catch (err) {
       setMessage(err?.message || "Failed to load admin data");
     }
@@ -145,6 +140,20 @@ export default function AdminUpload() {
     }
   };
 
+  const deleteContentItem = async (contentId) => {
+    try {
+      setDeletingId(contentId);
+      setMessage("");
+      await API.delete(`/content/${contentId}`);
+      setMessage("Content deleted successfully");
+      await fetchAdminData();
+    } catch (err) {
+      setMessage(err?.message || "Could not delete content");
+    } finally {
+      setDeletingId("");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 px-4 sm:px-6 py-8">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -162,14 +171,7 @@ export default function AdminUpload() {
           </div>
         )}
 
-        <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          <Metric label="Total Users" value={dashboard?.totalUsers ?? "-"} />
-          <Metric label="Library Content" value={dashboard?.totalContent ?? "-"} />
-          <Metric label="Completed Sessions" value={dashboard?.completedSessions ?? "-"} />
-          <Metric label="Certificates Issued" value={dashboard?.totalCertificates ?? "-"} />
-        </section>
-
-        <section className="grid xl:grid-cols-[1.25fr_0.75fr] gap-6">
+        <section className="grid xl:grid-cols-[1.2fr_0.8fr] gap-6">
           <div className="bg-white p-6 sm:p-8 rounded-3xl border shadow-sm">
             <h2 className="text-2xl font-semibold mb-6">Upload CME Content</h2>
 
@@ -345,24 +347,14 @@ export default function AdminUpload() {
             </button>
           </div>
 
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-3xl border shadow-sm">
-              <h2 className="text-xl font-semibold mb-4">Recent Users</h2>
-              <div className="space-y-3 text-sm">
-                {(dashboard?.recentUsers || []).map((user) => (
-                  <div key={user._id} className="border rounded-2xl p-4">
-                    <p className="font-medium text-gray-900">{user.name}</p>
-                    <p className="text-gray-500 mt-1">{user.email}</p>
-                  </div>
-                ))}
-                {(dashboard?.recentUsers || []).length === 0 && (
-                  <p className="text-gray-500">No user records available.</p>
-                )}
+          <div className="bg-white p-6 rounded-3xl border shadow-sm">
+              <div className="flex items-center justify-between gap-4 mb-4">
+                <div>
+                  <h2 className="text-xl font-semibold">Manage Uploaded Content</h2>
+                  <p className="text-sm text-gray-500 mt-1">Review, open, and delete uploaded sessions and courses.</p>
+                </div>
+                <p className="text-sm text-gray-500">{content.length} items</p>
               </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-3xl border shadow-sm">
-              <h2 className="text-xl font-semibold mb-4">Recent Uploads</h2>
               <div className="space-y-3 text-sm">
                 {content.map((item) => (
                   <div key={item._id} className="border rounded-2xl p-4">
@@ -370,35 +362,41 @@ export default function AdminUpload() {
                     <p className="text-gray-500 mt-1">
                       {item.discipline || "Discipline not set"} | {item.learningMode || "session"}
                     </p>
-                    {(item.primaryAsset?.url || item.fileUrl) && (
+                    <div className="flex flex-wrap gap-3 mt-3">
                       <a
-                        href={resolveAssetUrl(item.primaryAsset?.url || item.fileUrl)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-block mt-2 text-cyan-700"
+                        href={`/content/${item._id}`}
+                        className="inline-flex text-cyan-700"
                       >
-                        Open resource
+                        View content
                       </a>
-                    )}
+                      {(item.primaryAsset?.url || item.fileUrl) && item.contentType !== "video" && (
+                        <a
+                          href={resolveAssetUrl(item.primaryAsset?.url || item.fileUrl)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex text-blue-900"
+                        >
+                          Open resource
+                        </a>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => deleteContentItem(item._id)}
+                        disabled={deletingId === item._id}
+                        className="inline-flex text-red-600 disabled:text-red-300"
+                      >
+                        {deletingId === item._id ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
                   </div>
                 ))}
                 {content.length === 0 && (
                   <p className="text-gray-500">No content uploaded yet.</p>
                 )}
               </div>
-            </div>
           </div>
         </section>
       </div>
-    </div>
-  );
-}
-
-function Metric({ label, value }) {
-  return (
-    <div className="bg-white p-5 rounded-3xl border shadow-sm">
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className="text-2xl font-semibold text-blue-950 mt-2">{value}</p>
     </div>
   );
 }
