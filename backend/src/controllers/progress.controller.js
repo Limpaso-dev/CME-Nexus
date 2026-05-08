@@ -75,8 +75,23 @@ const buildProgressSnapshot = (record, content) => {
   return record;
 };
 
+const rejectAdminTracking = (req, res) => {
+  if (req.user?.role === "admin") {
+    res.status(403).json({
+      message: "Admins can view content, but learner progress is not tracked for admin accounts"
+    });
+    return true;
+  }
+
+  return false;
+};
+
 export const markModuleRead = async (req, res) => {
   try {
+    if (rejectAdminTracking(req, res)) {
+      return;
+    }
+
     const { contentId, moduleId, seconds } = req.body;
     const userId = req.user.id;
 
@@ -144,6 +159,10 @@ export const markModuleRead = async (req, res) => {
 
 export const trackEngagement = async (req, res) => {
   try {
+    if (rejectAdminTracking(req, res)) {
+      return;
+    }
+
     const { contentId, seconds } = req.body;
     const userId = req.user.id;
 
@@ -194,6 +213,10 @@ export const trackEngagement = async (req, res) => {
 
 export const markComplete = async (req, res) => {
   try {
+    if (rejectAdminTracking(req, res)) {
+      return;
+    }
+
     const { contentId } = req.body;
     const userId = req.user.id;
 
@@ -305,6 +328,10 @@ export const markComplete = async (req, res) => {
 
 export const getMyProgress = async (req, res) => {
   try {
+    if (req.user?.role === "admin") {
+      return res.json([]);
+    }
+
     const progress = await Progress.find({ userId: req.user.id })
       .populate("contentId", "title discipline topic speaker contentType credits eventDate learningMode modules")
       .sort({ updatedAt: -1 });
