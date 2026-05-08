@@ -2,12 +2,30 @@ import { useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import API, { resolveAssetUrl } from "../services/api";
 
+const TRACKING_INTERVAL_SECONDS = 15;
+
 const formatDate = (value) => {
   if (!value) {
     return "Not set";
   }
 
   return new Date(value).toLocaleDateString();
+};
+
+const formatDuration = (seconds) => {
+  const safeSeconds = Math.max(0, Number(seconds) || 0);
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainder = safeSeconds % 60;
+
+  if (!minutes) {
+    return `${remainder}s`;
+  }
+
+  if (!remainder) {
+    return `${minutes} min`;
+  }
+
+  return `${minutes} min ${remainder}s`;
 };
 
 export default function ContentViewer() {
@@ -18,6 +36,7 @@ export default function ContentViewer() {
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState("");
   const [progress, setProgress] = useState(null);
+  const [activeModuleId, setActiveModuleId] = useState("");
 
   const fetchDiscussion = async () => {
     const discussionRes = await API.get(`/discussions/${id}`);
@@ -60,6 +79,61 @@ export default function ContentViewer() {
   const completedModuleIds = progress?.completedModuleIds || [];
   const allModulesRead = moduleIds.length === 0 || moduleIds.every((moduleId) => completedModuleIds.includes(moduleId));
   const primaryResourceUrl = resolveAssetUrl(content?.primaryAsset?.url || content?.fileUrl);
+  const requiredSessionSeconds = (content?.minCompletionMinutes || 10) * 60;
+  const sessionSecondsSpent = progress?.engagementSeconds || 0;
+
+  useEffect(() => {
+    if (!content || content.learningMode !== "course" || activeModuleId) {
+      return;
+    }
+
+    const preferredModuleId = progress?.lastReadModuleId || moduleIds[0] || "";
+    if (preferredModuleId) {
+      setActiveModuleId(preferredModuleId);
+    }
+  }, [activeModuleId, content, moduleIds, progress?.lastReadModuleId]);
+
+  useEffect(() => {
+    if (!content) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(async () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      try {
+        if (content.learningMode === "course") {
+          if (!activeModuleId || completedModuleIds.includes(activeModuleId)) {
+            return;
+          }
+
+          const res = await API.post("/progress/module", {
+            contentId: id,
+            moduleId: activeModuleId,
+            seconds: TRACKING_INTERVAL_SECONDS
+          });
+          setProgress(res.progress || null);
+          return;
+        }
+
+        if (progress?.completed) {
+          return;
+        }
+
+        const res = await API.post("/progress/engagement", {
+          contentId: id,
+          seconds: TRACKING_INTERVAL_SECONDS
+        });
+        setProgress(res.progress || null);
+      } catch (err) {
+        setFeedback(err?.message || "Could not track learning progress");
+      }
+    }, TRACKING_INTERVAL_SECONDS * 1000);
+
+    return () => window.clearInterval(timer);
+  }, [activeModuleId, completedModuleIds, content, id, progress?.completed]);
 
   const markComplete = async () => {
     try {
@@ -72,19 +146,6 @@ export default function ContentViewer() {
       await fetchProgress();
     } catch (err) {
       setFeedback(err?.message || "Could not mark content as complete");
-    }
-  };
-
-  const markModuleRead = async (moduleId) => {
-    try {
-      await API.post("/progress/module", {
-        contentId: id,
-        moduleId
-      });
-      await fetchProgress();
-      setFeedback("Module marked as read.");
-    } catch (err) {
-      setFeedback(err?.message || "Could not update module progress");
     }
   };
 
@@ -117,6 +178,16 @@ export default function ContentViewer() {
     <div className="px-4 sm:px-6 py-8 max-w-6xl mx-auto">
       <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-6">
         <section className="bg-white rounded-3xl border shadow-sm p-6 sm:p-8">
+          {(content.thumbnailAsset?.url || content.primaryAsset?.resourceType === "image") && (
+            <div className="mb-6 overflow-hidden rounded-[1.75rem] border bg-slate-100 aspect-[16/8]">
+              <img
+                src={resolveAssetUrl(content.thumbnailAsset?.url || content.primaryAsset?.url)}
+                alt={content.title}
+                className="h-full w-full object-cover"
+              />
+            </div>
+          )}
+
           <p className="text-cyan-700 uppercase tracking-[0.22em] text-xs mb-3">
             {content.discipline || "CME Content"} | {content.learningMode || "session"}
           </p>
@@ -132,12 +203,45 @@ export default function ContentViewer() {
             <Meta label="Progress" value={`${progress?.percentComplete || 0}%`} />
           </div>
 
+          <div className="rounded-2xl border bg-slate-50 p-5 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+              <div>
+                <h2 className="font-semibold text-gray-900">Learning progress</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Credits unlock only after the required engagement time is met.
+                </p>
+              </div>
+              <span className="text-sm font-medium text-blue-900">
+                {progress?.percentComplete || 0}% complete
+              </span>
+            </div>
+            <div className="h-3 rounded-full bg-white border overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-900 transition-all"
+                style={{ width: `${progress?.percentComplete || 0}%` }}
+              />
+            </div>
+            <p className="text-sm text-gray-600 mt-3">
+              {content.learningMode === "course"
+                ? `Complete each module's guided learning time before claiming CME credit.`
+                : `Required learning time: ${content.minCompletionMinutes || 10} minutes. Tracked so far: ${formatDuration(sessionSecondsSpent)}.`}
+            </p>
+          </div>
+
           {content.learningMode === "course" && content.modules.length > 0 ? (
             <div className="space-y-4 mb-6">
               <h2 className="text-xl font-semibold">Course Modules</h2>
               {content.modules.map((module, index) => {
                 const moduleId = String(module._id);
                 const isRead = completedModuleIds.includes(moduleId);
+                const moduleProgress = progress?.moduleProgress?.find((entry) => entry.moduleId === moduleId);
+                const requiredModuleSeconds = (module.estimatedMinutes || 5) * 60;
+                const trackedModuleSeconds = moduleProgress?.secondsSpent || 0;
+                const modulePercent = Math.min(
+                  100,
+                  Math.round((trackedModuleSeconds / requiredModuleSeconds) * 100)
+                );
+                const isActive = activeModuleId === moduleId;
 
                 return (
                   <div key={moduleId} className="rounded-2xl border bg-gray-50 p-5">
@@ -145,18 +249,34 @@ export default function ContentViewer() {
                       <div>
                         <p className="text-xs uppercase tracking-wide text-gray-400">Module {index + 1}</p>
                         <h3 className="font-semibold text-gray-900 mt-1">{module.title}</h3>
+                        <p className="text-sm text-gray-500 mt-2">
+                          Required time: {module.estimatedMinutes || 5} min
+                        </p>
                       </div>
                       <button
-                        onClick={() => markModuleRead(moduleId)}
-                        disabled={isRead}
+                        onClick={() => setActiveModuleId(moduleId)}
                         className={`px-4 py-2 rounded-xl text-sm ${
-                          isRead
-                            ? "bg-green-100 text-green-800"
-                            : "bg-cyan-500 text-blue-950 hover:bg-cyan-400"
+                          isActive
+                            ? "bg-blue-900 text-white"
+                            : isRead
+                              ? "bg-green-100 text-green-800"
+                              : "bg-cyan-500 text-blue-950 hover:bg-cyan-400"
                         }`}
                       >
-                        {isRead ? "Read" : "Mark as read"}
+                        {isActive ? "Tracking now" : isRead ? "Completed" : "Start learning"}
                       </button>
+                    </div>
+
+                    <div className="mt-4">
+                      <div className="h-2 rounded-full bg-white border overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-900 transition-all"
+                          style={{ width: `${modulePercent}%` }}
+                        />
+                      </div>
+                      <p className="text-sm text-gray-600 mt-2">
+                        {formatDuration(trackedModuleSeconds)} of {formatDuration(requiredModuleSeconds)} tracked
+                      </p>
                     </div>
 
                     <p className="text-sm text-gray-700 leading-6 mt-4 whitespace-pre-wrap">
@@ -231,9 +351,14 @@ export default function ContentViewer() {
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={markComplete}
-              disabled={content.learningMode === "course" && !allModulesRead}
+              disabled={
+                content.learningMode === "course"
+                  ? !allModulesRead
+                  : sessionSecondsSpent < requiredSessionSeconds
+              }
               className={`px-5 py-3 rounded-xl transition ${
-                content.learningMode === "course" && !allModulesRead
+                ((content.learningMode === "course" && !allModulesRead) ||
+                  (content.learningMode !== "course" && sessionSecondsSpent < requiredSessionSeconds))
                   ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                   : "bg-blue-900 text-white hover:bg-blue-800"
               }`}

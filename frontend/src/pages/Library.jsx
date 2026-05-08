@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import API from "../services/api";
+import API, { resolveAssetUrl } from "../services/api";
 
 const disciplines = [
   "Hematology",
@@ -173,6 +173,16 @@ export default function Library() {
 
           {!loading && items.map((item) => (
             <article key={item._id} className="bg-white p-6 rounded-3xl border shadow-sm hover:shadow-md transition">
+              {(item.thumbnailAsset?.url || item.primaryAsset?.resourceType === "image") && (
+                <div className="mb-5 overflow-hidden rounded-2xl border bg-slate-100 aspect-[16/9]">
+                  <img
+                    src={resolveAssetUrl(item.thumbnailAsset?.url || item.primaryAsset?.url)}
+                    alt={item.title}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              )}
+
               <div className="flex items-start justify-between gap-3 mb-4">
                 <div>
                   <p className="text-xs font-medium text-cyan-700 uppercase tracking-wide">{item.discipline || "Discipline"}</p>
@@ -201,6 +211,14 @@ export default function Library() {
                 <div>
                   <p className="text-gray-400">Date</p>
                   <p className="text-gray-700 mt-1">{formatDate(item.eventDate)}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400">Mode</p>
+                  <p className="text-gray-700 mt-1 capitalize">{item.learningMode || "session"}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400">Required time</p>
+                  <p className="text-gray-700 mt-1">{item.minCompletionMinutes || 10} min</p>
                 </div>
               </div>
 

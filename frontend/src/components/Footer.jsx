@@ -37,7 +37,7 @@ export default function Footer() {
           <h3 className="text-white font-medium mb-3">Contact</h3>
           <p className="text-gray-300 text-sm">Email: support@cmenexus.com</p>
           <p className="text-gray-300 text-sm mt-1">Nairobi, Kenya</p>
-          <p className="text-gray-400 text-xs mt-3">Royal Blue #1E3A8A | Accent Cyan #06B6D4</p>
+         
         </div>
       </div>
 

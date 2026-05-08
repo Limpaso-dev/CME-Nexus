@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import API, { resolveAssetUrl } from "../services/api";
 
-const emptyModule = { title: "", content: "", resourceUrl: "" };
+const emptyModule = { title: "", content: "", resourceUrl: "", estimatedMinutes: 5 };
 const emptyForm = {
   title: "",
   description: "",
@@ -15,8 +15,10 @@ const emptyForm = {
   contentType: "video",
   learningMode: "session",
   credits: 5,
+  minCompletionMinutes: 10,
   isLiveEvent: false,
   primaryAsset: null,
+  thumbnailAsset: null,
   attachments: [],
   modules: []
 };
@@ -111,11 +113,16 @@ export default function AdminUpload() {
       payload.append("contentType", form.contentType);
       payload.append("learningMode", form.learningMode);
       payload.append("credits", String(Number(form.credits)));
+      payload.append("minCompletionMinutes", String(Number(form.minCompletionMinutes)));
       payload.append("isLiveEvent", String(form.isLiveEvent));
       payload.append("modules", JSON.stringify(form.modules));
 
       if (form.primaryAsset) {
         payload.append("primaryAsset", form.primaryAsset);
+      }
+
+      if (form.thumbnailAsset) {
+        payload.append("thumbnailAsset", form.thumbnailAsset);
       }
 
       Array.from(form.attachments).forEach((file) => {
@@ -200,6 +207,12 @@ export default function AdminUpload() {
               </label>
 
               <Input label="Credits" value={form.credits} onChange={(value) => handleChange("credits", value)} type="number" />
+              <Input
+                label="Minimum learning time (minutes)"
+                value={form.minCompletionMinutes}
+                onChange={(value) => handleChange("minCompletionMinutes", value)}
+                type="number"
+              />
 
               <div className="sm:col-span-2">
                 <Input label="External URL (optional)" value={form.fileUrl} onChange={(value) => handleChange("fileUrl", value)} />
@@ -227,6 +240,16 @@ export default function AdminUpload() {
             </label>
 
             <div className="grid sm:grid-cols-2 gap-4 mt-4">
+              <label className="flex flex-col gap-2 text-sm">
+                <span className="text-gray-600">Thumbnail / course graphic</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleChange("thumbnailAsset", e.target.files?.[0] || null)}
+                  className="border px-3 py-3 rounded-xl text-sm"
+                />
+              </label>
+
               <label className="flex flex-col gap-2 text-sm">
                 <span className="text-gray-600">Primary file upload</span>
                 <input
@@ -289,6 +312,12 @@ export default function AdminUpload() {
                     <div className="grid gap-3">
                       <Input label="Module title" value={module.title} onChange={(value) => updateModule(index, "title", value)} />
                       <Input label="Resource URL (optional)" value={module.resourceUrl} onChange={(value) => updateModule(index, "resourceUrl", value)} />
+                      <Input
+                        label="Estimated learning time (minutes)"
+                        value={module.estimatedMinutes}
+                        onChange={(value) => updateModule(index, "estimatedMinutes", value)}
+                        type="number"
+                      />
                       <label className="block text-sm">
                         <span className="text-gray-600">Module reading content</span>
                         <textarea

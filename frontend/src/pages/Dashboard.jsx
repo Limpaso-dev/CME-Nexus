@@ -106,6 +106,9 @@ function LearnerDashboard() {
                       <p className="text-sm text-gray-500 mt-1">
                         {item.contentId?.discipline || "Discipline not set"} | {item.contentId?.contentType || "Type not set"}
                       </p>
+                      <p className="text-sm text-gray-600 mt-2">
+                        Progress: {item.percentComplete || 0}%
+                      </p>
                     </div>
                     <span className="bg-blue-50 text-blue-900 text-xs px-3 py-1 rounded-full w-fit">
                       {item.completed ? "Completed" : "In progress"}
