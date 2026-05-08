@@ -35,6 +35,8 @@ export default function ContentViewer() {
   const [content, setContent] = useState(null);
   const [comments, setComments] = useState([]);
   const [message, setMessage] = useState("");
+  const [replyDrafts, setReplyDrafts] = useState({});
+  const [activeReplyId, setActiveReplyId] = useState("");
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState("");
   const [progress, setProgress] = useState(null);
@@ -171,6 +173,26 @@ export default function ContentViewer() {
       await fetchDiscussion();
     } catch (err) {
       setFeedback(err?.message || "Could not post discussion message");
+    }
+  };
+
+  const postReply = async (parentId) => {
+    const replyMessage = replyDrafts[parentId]?.trim();
+    if (!replyMessage) {
+      return;
+    }
+
+    try {
+      await API.post("/discussions", {
+        contentId: id,
+        parentId,
+        message: replyMessage
+      });
+      setReplyDrafts((current) => ({ ...current, [parentId]: "" }));
+      setActiveReplyId("");
+      await fetchDiscussion();
+    } catch (err) {
+      setFeedback(err?.message || "Could not post reply");
     }
   };
 
@@ -462,11 +484,16 @@ export default function ContentViewer() {
 
           <div className="space-y-4 mt-6">
             {comments.map((comment) => (
-              <div key={comment._id} className="border rounded-2xl p-4 bg-gray-50 text-sm">
-                <p className="font-medium text-gray-900">{comment.userId?.name || "User"}</p>
-                <p className="text-xs text-gray-500 mt-1">{formatDate(comment.createdAt)}</p>
-                <p className="text-gray-700 mt-3 leading-6">{comment.message}</p>
-              </div>
+              <DiscussionThread
+                key={comment._id}
+                comment={comment}
+                isAdminViewer={isAdminViewer}
+                activeReplyId={activeReplyId}
+                setActiveReplyId={setActiveReplyId}
+                replyDrafts={replyDrafts}
+                setReplyDrafts={setReplyDrafts}
+                onReply={postReply}
+              />
             ))}
 
             {comments.length === 0 && (
@@ -484,6 +511,85 @@ function Meta({ label, value }) {
     <div className="rounded-2xl border bg-gray-50 px-4 py-4">
       <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">{label}</p>
       <p className="text-gray-800">{value || "Not set"}</p>
+    </div>
+  );
+}
+
+function DiscussionThread({
+  comment,
+  isAdminViewer,
+  activeReplyId,
+  setActiveReplyId,
+  replyDrafts,
+  setReplyDrafts,
+  onReply,
+  depth = 0
+}) {
+  const isReplying = activeReplyId === comment._id;
+  const replies = Array.isArray(comment.replies) ? comment.replies : [];
+  const replyDraft = replyDrafts[comment._id] || "";
+
+  return (
+    <div className={`${depth > 0 ? "ml-4 sm:ml-8 mt-3" : ""}`}>
+      <div className="border rounded-2xl p-4 bg-gray-50 text-sm">
+        <p className="font-medium text-gray-900">{comment.userId?.name || "User"}</p>
+        <p className="text-xs text-gray-500 mt-1">{formatDate(comment.createdAt)}</p>
+        <p className="text-gray-700 mt-3 leading-6">{comment.message}</p>
+
+        {!isAdminViewer && (
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => setActiveReplyId(isReplying ? "" : comment._id)}
+              className="text-cyan-700 hover:underline"
+            >
+              {isReplying ? "Cancel reply" : "Reply"}
+            </button>
+          </div>
+        )}
+
+        {!isAdminViewer && isReplying && (
+          <div className="mt-4 rounded-2xl border bg-white p-3">
+            <textarea
+              value={replyDraft}
+              onChange={(e) =>
+                setReplyDrafts((current) => ({
+                  ...current,
+                  [comment._id]: e.target.value
+                }))
+              }
+              rows={3}
+              className="border w-full px-3 py-3 rounded-xl text-sm resize-none"
+              placeholder="Write a direct reply..."
+            />
+            <button
+              type="button"
+              onClick={() => onReply(comment._id)}
+              className="mt-3 bg-cyan-500 text-blue-950 px-4 py-2 rounded-xl hover:bg-cyan-400 text-sm font-medium"
+            >
+              Post reply
+            </button>
+          </div>
+        )}
+      </div>
+
+      {replies.length > 0 && (
+        <div className="mt-3 space-y-3">
+          {replies.map((reply) => (
+            <DiscussionThread
+              key={reply._id}
+              comment={reply}
+              isAdminViewer={isAdminViewer}
+              activeReplyId={activeReplyId}
+              setActiveReplyId={setActiveReplyId}
+              replyDrafts={replyDrafts}
+              setReplyDrafts={setReplyDrafts}
+              onReply={onReply}
+              depth={depth + 1}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
