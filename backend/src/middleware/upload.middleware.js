@@ -31,5 +31,6 @@ export const uploadContentFiles = multer({
   }
 }).fields([
   { name: "primaryAsset", maxCount: 1 },
+  { name: "thumbnailAsset", maxCount: 1 },
   { name: "attachments", maxCount: 10 }
 ]);

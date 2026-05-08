@@ -6,12 +6,70 @@ import Progress from "../models/Progress.js";
 import User from "../models/User.js";
 import { generateCertificate } from "../utils/generateCertificate.js";
 
+const MAX_TRACKED_SECONDS_PER_REQUEST = 30;
+
+const clampTrackedSeconds = (value) => {
+  const seconds = Number(value);
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return 0;
+  }
+
+  return Math.min(Math.round(seconds), MAX_TRACKED_SECONDS_PER_REQUEST);
+};
+
+const getSessionRequirementSeconds = (content) =>
+  Math.max(1, Number(content.minCompletionMinutes) || 10) * 60;
+
+const getModuleRequirementSeconds = (module) =>
+  Math.max(1, Number(module.estimatedMinutes) || 5) * 60;
+
+const getOrCreateModuleProgress = (record, moduleId) => {
+  let moduleProgress = record.moduleProgress.find((entry) => entry.moduleId === moduleId);
+
+  if (!moduleProgress) {
+    record.moduleProgress.push({
+      moduleId,
+      secondsSpent: 0,
+      completed: false,
+      completedAt: null
+    });
+    moduleProgress = record.moduleProgress.find((entry) => entry.moduleId === moduleId);
+  }
+
+  return moduleProgress;
+};
+
+const syncCompletedModuleIds = (record) => {
+  record.completedModuleIds = record.moduleProgress
+    .filter((entry) => entry.completed)
+    .map((entry) => entry.moduleId);
+};
+
 const buildProgressSnapshot = (record, content) => {
   const moduleCount = content.modules.length;
-  const completedModuleCount = record.completedModuleIds.length;
-  const percentComplete = moduleCount > 0
-    ? Math.round((completedModuleCount / moduleCount) * 100)
-    : record.completed ? 100 : 0;
+  let percentComplete = 0;
+
+  if (moduleCount > 0) {
+    syncCompletedModuleIds(record);
+    const totalProgress = content.modules.reduce((sum, module) => {
+      const moduleProgress = record.moduleProgress.find(
+        (entry) => entry.moduleId === String(module._id)
+      );
+      const requiredSeconds = getModuleRequirementSeconds(module);
+      const ratio = moduleProgress
+        ? Math.min(moduleProgress.secondsSpent / requiredSeconds, 1)
+        : 0;
+
+      return sum + ratio;
+    }, 0);
+
+    percentComplete = Math.round((totalProgress / moduleCount) * 100);
+  } else {
+    const requiredSeconds = getSessionRequirementSeconds(content);
+    percentComplete = record.completed
+      ? 100
+      : Math.round((Math.min(record.engagementSeconds / requiredSeconds, 1)) * 100);
+  }
 
   record.percentComplete = percentComplete;
   return record;
@@ -19,7 +77,7 @@ const buildProgressSnapshot = (record, content) => {
 
 export const markModuleRead = async (req, res) => {
   try {
-    const { contentId, moduleId } = req.body;
+    const { contentId, moduleId, seconds } = req.body;
     const userId = req.user.id;
 
     if (!mongoose.Types.ObjectId.isValid(contentId)) {
@@ -36,6 +94,11 @@ export const markModuleRead = async (req, res) => {
       return res.status(404).json({ message: "Module not found" });
     }
 
+    const trackedSeconds = clampTrackedSeconds(seconds || 15);
+    if (!trackedSeconds) {
+      return res.status(400).json({ message: "A valid engagement duration is required" });
+    }
+
     let record = await Progress.findOne({ userId, contentId });
     if (!record) {
       record = await Progress.create({
@@ -46,20 +109,85 @@ export const markModuleRead = async (req, res) => {
       });
     }
 
-    if (!record.completedModuleIds.includes(moduleId)) {
-      record.completedModuleIds.push(moduleId);
+    const currentModule = content.modules.find((module) => String(module._id) === moduleId);
+    const requiredSeconds = getModuleRequirementSeconds(currentModule);
+    const moduleProgress = getOrCreateModuleProgress(record, moduleId);
+
+    if (!moduleProgress.completed) {
+      moduleProgress.secondsSpent = Math.min(
+        moduleProgress.secondsSpent + trackedSeconds,
+        requiredSeconds
+      );
+
+      if (moduleProgress.secondsSpent >= requiredSeconds) {
+        moduleProgress.completed = true;
+        moduleProgress.completedAt = moduleProgress.completedAt || new Date();
+      }
     }
 
     record.lastReadModuleId = moduleId;
+    syncCompletedModuleIds(record);
     buildProgressSnapshot(record, content);
     await record.save();
 
     return res.json({
-      message: "Module marked as read",
+      message: moduleProgress.completed
+        ? "Module learning requirement completed"
+        : "Module engagement tracked",
       progress: record
     });
   } catch (error) {
     console.error("Module progress error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const trackEngagement = async (req, res) => {
+  try {
+    const { contentId, seconds } = req.body;
+    const userId = req.user.id;
+
+    if (!mongoose.Types.ObjectId.isValid(contentId)) {
+      return res.status(400).json({ message: "Invalid content id" });
+    }
+
+    const content = await Content.findById(contentId);
+    if (!content) {
+      return res.status(404).json({ message: "Content not found" });
+    }
+
+    const trackedSeconds = clampTrackedSeconds(seconds || 15);
+    if (!trackedSeconds) {
+      return res.status(400).json({ message: "A valid engagement duration is required" });
+    }
+
+    let record = await Progress.findOne({ userId, contentId });
+    if (!record) {
+      record = await Progress.create({
+        userId,
+        contentId,
+        completedModuleIds: [],
+        percentComplete: 0
+      });
+    }
+
+    if (content.learningMode !== "course") {
+      const requiredSeconds = getSessionRequirementSeconds(content);
+      record.engagementSeconds = Math.min(
+        record.engagementSeconds + trackedSeconds,
+        requiredSeconds
+      );
+    }
+
+    buildProgressSnapshot(record, content);
+    await record.save();
+
+    return res.json({
+      message: "Learning engagement tracked",
+      progress: record
+    });
+  } catch (error) {
+    console.error("Track engagement error:", error);
     return res.status(500).json({ message: "Server error" });
   }
 };
@@ -108,6 +236,16 @@ export const markComplete = async (req, res) => {
           progress: record
         });
       }
+    } else {
+      const requiredSeconds = getSessionRequirementSeconds(content);
+      if (record.engagementSeconds < requiredSeconds) {
+        buildProgressSnapshot(record, content);
+
+        return res.status(400).json({
+          message: "Spend more time with this learning material before marking it complete",
+          progress: record
+        });
+      }
     }
 
     if (record.completed) {
@@ -124,9 +262,7 @@ export const markComplete = async (req, res) => {
     record.completed = true;
     record.completedAt = new Date();
     buildProgressSnapshot(record, content);
-    if (content.learningMode !== "course" && record.percentComplete === 0) {
-      record.percentComplete = 100;
-    }
+    record.percentComplete = 100;
     await record.save();
 
     let awardedCredits = 0;

@@ -52,7 +52,8 @@ const parseModules = (value) => {
     .map((module) => ({
       title: String(module.title || "").trim(),
       content: String(module.content || "").trim(),
-      resourceUrl: String(module.resourceUrl || "").trim()
+      resourceUrl: String(module.resourceUrl || "").trim(),
+      estimatedMinutes: Math.max(1, Number(module.estimatedMinutes) || 5)
     }))
     .filter((module) => module.title);
 };
@@ -105,6 +106,15 @@ const validateContentPayload = (payload, { partial = false } = {}) => {
       errors.push("credits must be a non-negative number");
     } else {
       data.credits = credits;
+    }
+  }
+
+  if (payload.minCompletionMinutes !== undefined) {
+    const minCompletionMinutes = Number(payload.minCompletionMinutes);
+    if (!Number.isFinite(minCompletionMinutes) || minCompletionMinutes < 1) {
+      errors.push("minCompletionMinutes must be at least 1 minute");
+    } else {
+      data.minCompletionMinutes = minCompletionMinutes;
     }
   }
 
@@ -300,11 +310,15 @@ const validateModeSpecificRequirements = (content) => {
 
 const uploadIncomingFiles = async (files = {}) => {
   const primaryAssetFile = files?.primaryAsset?.[0];
+  const thumbnailAssetFile = files?.thumbnailAsset?.[0];
   const attachmentFiles = files?.attachments || [];
 
-  const [primaryAsset, attachments] = await Promise.all([
+  const [primaryAsset, thumbnailAsset, attachments] = await Promise.all([
     primaryAssetFile
       ? uploadBufferToCloudinary(primaryAssetFile, "cme-nexus/primary")
+      : Promise.resolve(null),
+    thumbnailAssetFile
+      ? uploadBufferToCloudinary(thumbnailAssetFile, "cme-nexus/thumbnails")
       : Promise.resolve(null),
     attachmentFiles.length > 0
       ? Promise.all(
@@ -315,7 +329,7 @@ const uploadIncomingFiles = async (files = {}) => {
       : Promise.resolve([])
   ]);
 
-  return { primaryAsset, attachments };
+  return { primaryAsset, thumbnailAsset, attachments };
 };
 
 export const createContent = async (req, res) => {
@@ -410,6 +424,10 @@ export const updateContent = async (req, res) => {
 
     if (uploadedAssets.primaryAsset) {
       content.primaryAsset = uploadedAssets.primaryAsset;
+    }
+
+    if (uploadedAssets.thumbnailAsset) {
+      content.thumbnailAsset = uploadedAssets.thumbnailAsset;
     }
 
     if (uploadedAssets.attachments.length > 0) {

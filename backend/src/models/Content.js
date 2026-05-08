@@ -47,6 +47,11 @@ const moduleSchema = new mongoose.Schema(
       type: String,
       default: "",
       trim: true
+    },
+    estimatedMinutes: {
+      type: Number,
+      default: 5,
+      min: 1
     }
   },
   { timestamps: false }
@@ -127,6 +132,11 @@ const contentSchema = new mongoose.Schema(
       default: null
     },
 
+    thumbnailAsset: {
+      type: assetSchema,
+      default: null
+    },
+
     attachments: {
       type: [assetSchema],
       default: []
@@ -141,6 +151,12 @@ const contentSchema = new mongoose.Schema(
       type: Number,
       default: 0,
       min: 0
+    },
+
+    minCompletionMinutes: {
+      type: Number,
+      default: 10,
+      min: 1
     },
 
     contentType: {
