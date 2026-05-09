@@ -48,12 +48,12 @@ function LearnerDashboard() {
   return (
     <div className="min-h-screen bg-gray-100 px-4 sm:px-6 py-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        <section className="bg-white rounded-3xl border shadow-sm p-6 sm:p-8">
-          <p className="text-cyan-700 uppercase tracking-[0.22em] text-xs mb-3">Dashboard</p>
-          <h1 className="text-3xl font-semibold text-gray-900 mb-3">
+        <section className="rounded-[2rem] bg-[linear-gradient(135deg,#0f172a_0%,#133b8a_52%,#0b6d96_100%)] p-6 text-white shadow-sm sm:p-8">
+          <p className="mb-3 text-xs uppercase tracking-[0.22em] text-cyan-200">Dashboard</p>
+          <h1 className="mb-3 text-3xl font-semibold">
             Welcome {profile?.name || localStorage.getItem("name") || "back"}.
           </h1>
-          <p className="text-gray-600 max-w-3xl">
+          <p className="max-w-3xl text-blue-100">
             Manage your CME, track your progress, and stay organized all in one place.
           </p>
         </section>
@@ -65,7 +65,7 @@ function LearnerDashboard() {
         )}
 
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Total CME Credits" value={stats.totalCredits} />
+          <StatCard label="Total CME Credits" value={stats.totalCredits} accent="brand" />
           <StatCard label="Completed Sessions" value={stats.completed} />
           <StatCard label="Certificates Earned" value={stats.certificates} />
           <StatCard label="Profession" value={profile?.profession || "Not set"} />
@@ -364,7 +364,16 @@ function AdminDashboard() {
   );
 }
 
-function StatCard({ label, value }) {
+function StatCard({ label, value, accent = "default" }) {
+  if (accent === "brand") {
+    return (
+      <div className="rounded-3xl bg-[linear-gradient(135deg,#0f172a_0%,#1e3a8a_55%,#0f766e_100%)] p-5 text-white shadow-sm">
+        <p className="text-sm text-cyan-100">{label}</p>
+        <h2 className="mt-2 break-words text-3xl font-semibold">{value}</h2>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white p-5 rounded-3xl border shadow-sm">
       <p className="text-sm text-gray-500">{label}</p>

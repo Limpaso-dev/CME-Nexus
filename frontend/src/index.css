@@ -1,3 +1,76 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes heroBackgroundDrift {
+  0% {
+    transform: scale(1.06) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.1) translate3d(-1.5%, 1.5%, 0);
+  }
+  100% {
+    transform: scale(1.06) translate3d(0, 0, 0);
+  }
+}
+
+@keyframes heroCrossfadeA {
+  0% {
+    opacity: 1;
+  }
+  45% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes heroCrossfadeB {
+  0% {
+    opacity: 0;
+  }
+  45% {
+    opacity: 0;
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.hero-slide-a,
+.hero-slide-b {
+  animation: heroBackgroundDrift 18s ease-in-out infinite;
+  will-change: transform;
+}
+
+.hero-slide-a {
+  animation-name: heroBackgroundDrift, heroCrossfadeA;
+  animation-duration: 12s, 12s;
+  animation-timing-function: ease-in-out, ease-in-out;
+  animation-iteration-count: infinite, infinite;
+}
+
+.hero-slide-b {
+  animation-name: heroBackgroundDrift, heroCrossfadeB;
+  animation-duration: 12s, 12s;
+  animation-timing-function: ease-in-out, ease-in-out;
+  animation-iteration-count: infinite, infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-slide-a,
+  .hero-slide-b {
+    animation: none;
+  }
+
+  .hero-slide-b {
+    opacity: 0;
+  }
+}
