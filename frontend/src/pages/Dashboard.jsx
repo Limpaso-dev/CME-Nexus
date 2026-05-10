@@ -314,7 +314,7 @@ function AdminDashboard() {
                       <p className="text-sm text-gray-500 mt-1">{user.email}</p>
                     </div>
                     <span className="bg-slate-100 text-slate-700 text-xs px-3 py-1 rounded-full capitalize">
-                      {user.role}
+                      {user.profession || "Not set"}
                     </span>
                   </div>
                 </div>

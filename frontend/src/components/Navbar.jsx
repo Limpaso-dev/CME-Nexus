@@ -22,8 +22,17 @@ export default function Navbar() {
     setOpen(false);
   }, [location.pathname]);
 
-  const isActive = (path) =>
-    location.pathname === path ? "text-cyan-300" : "";
+  const isActive = (path) => location.pathname === path;
+
+  const desktopNavClass = (path) =>
+    `relative inline-flex items-center py-2 text-xs font-semibold uppercase tracking-[0.22em] transition ${
+      isActive(path) ? "text-white" : "text-blue-100 hover:text-cyan-300"
+    }`;
+
+  const mobileNavClass = (path) =>
+    `block py-2 text-xs font-semibold uppercase tracking-[0.2em] transition ${
+      isActive(path) ? "text-cyan-300 underline underline-offset-4" : "text-white hover:text-cyan-300"
+    }`;
 
   return (
     <nav className="sticky top-0 bg-blue-950/95 backdrop-blur text-white shadow-md relative z-50">
@@ -49,16 +58,32 @@ export default function Navbar() {
         </Link>
 
         {/* DESKTOP NAV */}
-        <div className="hidden md:flex items-center gap-6 text-sm">
-          <Link to="/" className={`hover:text-cyan-300 ${isActive("/")}`}>Home</Link>
-          <Link to={protectedHref(token, "/library")} className={`hover:text-cyan-300 ${isActive("/library")}`}>Library</Link>
-          <Link to={protectedHref(token, "/dashboard")} className={`hover:text-cyan-300 ${isActive("/dashboard")}`}>Dashboard</Link>
-          <Link to="/about" className={`hover:text-cyan-300 ${isActive("/about")}`}>About</Link>
-          <Link to="/contact" className={`hover:text-cyan-300 ${isActive("/contact")}`}>Contact</Link>
+        <div className="hidden md:flex items-center gap-6">
+          <Link to="/" className={desktopNavClass("/")}>
+            Home
+            <span className={`absolute left-0 right-0 -bottom-1 h-[2px] rounded-full bg-cyan-300 transition-transform duration-300 ${isActive("/") ? "scale-x-100" : "scale-x-0"}`} />
+          </Link>
+          <Link to={protectedHref(token, "/library")} className={desktopNavClass("/library")}>
+            Library
+            <span className={`absolute left-0 right-0 -bottom-1 h-[2px] rounded-full bg-cyan-300 transition-transform duration-300 ${isActive("/library") ? "scale-x-100" : "scale-x-0"}`} />
+          </Link>
+          <Link to={protectedHref(token, "/dashboard")} className={desktopNavClass("/dashboard")}>
+            Dashboard
+            <span className={`absolute left-0 right-0 -bottom-1 h-[2px] rounded-full bg-cyan-300 transition-transform duration-300 ${isActive("/dashboard") ? "scale-x-100" : "scale-x-0"}`} />
+          </Link>
+          <Link to="/about" className={desktopNavClass("/about")}>
+            About
+            <span className={`absolute left-0 right-0 -bottom-1 h-[2px] rounded-full bg-cyan-300 transition-transform duration-300 ${isActive("/about") ? "scale-x-100" : "scale-x-0"}`} />
+          </Link>
+          <Link to="/contact" className={desktopNavClass("/contact")}>
+            Contact
+            <span className={`absolute left-0 right-0 -bottom-1 h-[2px] rounded-full bg-cyan-300 transition-transform duration-300 ${isActive("/contact") ? "scale-x-100" : "scale-x-0"}`} />
+          </Link>
 
           {role === "admin" && (
-            <Link to="/admin" className={`hover:text-cyan-300 ${isActive("/admin")}`}>
+            <Link to="/admin" className={desktopNavClass("/admin")}>
               Upload
+              <span className={`absolute left-0 right-0 -bottom-1 h-[2px] rounded-full bg-cyan-300 transition-transform duration-300 ${isActive("/admin") ? "scale-x-100" : "scale-x-0"}`} />
             </Link>
           )}
         </div>
@@ -120,14 +145,14 @@ export default function Navbar() {
           open ? "block" : "hidden"
         }`}
       >
-        <Link to="/" className={`block py-2 ${isActive("/")}`}>Home</Link>
-        <Link to={protectedHref(token, "/library")} className={`block py-2 ${isActive("/library")}`}>Library</Link>
-        <Link to={protectedHref(token, "/dashboard")} className={`block py-2 ${isActive("/dashboard")}`}>Dashboard</Link>
-        <Link to="/about" className={`block py-2 ${isActive("/about")}`}>About</Link>
-        <Link to="/contact" className={`block py-2 ${isActive("/contact")}`}>Contact</Link>
+        <Link to="/" className={mobileNavClass("/")}>Home</Link>
+        <Link to={protectedHref(token, "/library")} className={mobileNavClass("/library")}>Library</Link>
+        <Link to={protectedHref(token, "/dashboard")} className={mobileNavClass("/dashboard")}>Dashboard</Link>
+        <Link to="/about" className={mobileNavClass("/about")}>About</Link>
+        <Link to="/contact" className={mobileNavClass("/contact")}>Contact</Link>
 
         {role === "admin" && (
-          <Link to="/admin" className={`block py-2 ${isActive("/admin")}`}>
+          <Link to="/admin" className={mobileNavClass("/admin")}>
             Upload
           </Link>
         )}
