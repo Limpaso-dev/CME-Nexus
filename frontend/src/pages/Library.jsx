@@ -143,23 +143,24 @@ export default function Library() {
           })}
         </section>
 
-        <section className="rounded-[2rem] border bg-white/95 p-5 shadow-sm backdrop-blur sm:p-6">
-          <div className="mb-5 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+        <section className="rounded-2xl border bg-white/95 p-4 shadow-sm backdrop-blur sm:rounded-[2rem] sm:p-6">
+          <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-cyan-700">Search Controls</p>
-              <h2 className="mt-2 text-xl font-semibold text-slate-900">Refine the library</h2>
+              <h2 className="mt-2 text-lg font-semibold text-slate-900 sm:text-xl">Refine the library</h2>
             </div>
-            <p className="text-sm text-slate-500">
+            <p className="hidden text-sm text-slate-500 sm:block">
               Use combinations of topic, speaker, format, and dates to narrow your results.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
             <FilterInput
               type="text"
               placeholder="Search topic, speaker, keyword"
               value={filters.search}
               onChange={(e) => updateFilter("search", e.target.value)}
+              className="col-span-2 xl:col-span-1"
             />
             <FilterInput
               type="text"
@@ -176,7 +177,7 @@ export default function Library() {
             <select
               value={filters.contentType}
               onChange={(e) => updateFilter("contentType", e.target.value)}
-              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 sm:px-4 sm:py-3"
             >
               <option value="">All content types</option>
               <option value="video">Recorded videos</option>
@@ -292,10 +293,12 @@ export default function Library() {
 }
 
 function FilterInput(props) {
+  const { className = "", ...inputProps } = props;
+
   return (
     <input
-      {...props}
-      className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+      {...inputProps}
+      className={`rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 sm:px-4 sm:py-3 ${className}`}
     />
   );
 }

@@ -46,14 +46,14 @@ function LearnerDashboard() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100 px-4 sm:px-6 py-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <section className="rounded-[2rem] bg-[linear-gradient(135deg,#0f172a_0%,#133b8a_52%,#0b6d96_100%)] p-6 text-white shadow-sm sm:p-8">
-          <p className="mb-3 text-xs uppercase tracking-[0.22em] text-cyan-200">Dashboard</p>
-          <h1 className="mb-3 text-3xl font-semibold">
+    <div className="min-h-screen bg-gray-100 px-4 py-6 sm:px-6 sm:py-8">
+      <div className="max-w-7xl mx-auto space-y-5 sm:space-y-8">
+        <section className="rounded-2xl bg-[linear-gradient(135deg,#0f172a_0%,#133b8a_52%,#0b6d96_100%)] p-5 text-white shadow-sm sm:rounded-[2rem] sm:p-8">
+          <p className="mb-2 text-xs uppercase tracking-[0.22em] text-cyan-200 sm:mb-3">Dashboard</p>
+          <h1 className="mb-2 text-2xl font-semibold sm:mb-3 sm:text-3xl">
             Welcome {profile?.name || localStorage.getItem("name") || "back"}.
           </h1>
-          <p className="max-w-3xl text-blue-100">
+          <p className="max-w-3xl text-sm text-blue-100 sm:text-base">
             Manage your CME, track your progress, and stay organized all in one place.
           </p>
         </section>
@@ -64,16 +64,16 @@ function LearnerDashboard() {
           </div>
         )}
 
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <section className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
           <StatCard label="Total CME Credits" value={stats.totalCredits} accent="brand" />
           <StatCard label="Completed Sessions" value={stats.completed} />
           <StatCard label="Certificates Earned" value={stats.certificates} />
           <StatCard label="Profession" value={profile?.profession || "Not set"} />
         </section>
 
-        <section className="grid lg:grid-cols-[0.9fr_1.1fr] gap-6">
-          <div className="bg-white rounded-3xl border shadow-sm p-6 sm:p-8">
-            <h2 className="text-xl font-semibold mb-5">Profile</h2>
+        <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr] lg:gap-6">
+          <div className="bg-white rounded-2xl border shadow-sm p-4 sm:rounded-3xl sm:p-8">
+            <h2 className="mb-4 text-lg font-semibold sm:mb-5 sm:text-xl">Profile</h2>
             {loading ? (
               <div className="space-y-3">
                 <div className="h-12 rounded-xl bg-gray-100 animate-pulse" />
@@ -81,7 +81,7 @@ function LearnerDashboard() {
                 <div className="h-12 rounded-xl bg-gray-100 animate-pulse" />
               </div>
             ) : (
-              <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-1 sm:gap-4">
                 <ProfileRow label="Name" value={profile?.name} />
                 <ProfileRow label="Email" value={profile?.email} />
                 <ProfileRow label="Profession" value={profile?.profession || "Not set"} />
@@ -91,18 +91,18 @@ function LearnerDashboard() {
             )}
           </div>
 
-          <div className="bg-white rounded-3xl border shadow-sm p-6 sm:p-8">
-            <h2 className="text-xl font-semibold mb-5">Recent Learning Progress</h2>
-            <div className="space-y-4">
+          <div className="bg-white rounded-2xl border shadow-sm p-4 sm:rounded-3xl sm:p-8">
+            <h2 className="mb-4 text-lg font-semibold sm:mb-5 sm:text-xl">Recent Learning Progress</h2>
+            <div className="space-y-3 sm:space-y-4">
               {loading && Array.from({ length: 3 }).map((_, index) => (
                 <div key={index} className="h-16 rounded-2xl bg-gray-100 animate-pulse" />
               ))}
 
               {!loading && recentProgress.map((item) => (
-                <div key={item._id} className="border rounded-2xl p-4">
+                <div key={item._id} className="border rounded-2xl p-3 sm:p-4">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <div>
-                      <p className="font-medium text-gray-900">{item.contentId?.title}</p>
+                      <p className="font-medium leading-snug text-gray-900">{item.contentId?.title}</p>
                       <p className="text-sm text-gray-500 mt-1">
                         {item.contentId?.discipline || "Discipline not set"} | {item.contentId?.contentType || "Type not set"}
                       </p>
@@ -124,15 +124,15 @@ function LearnerDashboard() {
           </div>
         </section>
 
-        <section className="bg-white rounded-3xl border shadow-sm p-6 sm:p-8">
-          <h2 className="text-xl font-semibold mb-5">Certificates</h2>
-          <div className="grid gap-4 md:grid-cols-2">
+        <section className="bg-white rounded-2xl border shadow-sm p-4 sm:rounded-3xl sm:p-8">
+          <h2 className="mb-4 text-lg font-semibold sm:mb-5 sm:text-xl">Certificates</h2>
+          <div className="grid gap-3 md:grid-cols-2 md:gap-4">
             {loading && Array.from({ length: 2 }).map((_, index) => (
               <div key={index} className="h-24 rounded-2xl bg-gray-100 animate-pulse" />
             ))}
 
             {!loading && certs.map((cert) => (
-              <div key={cert._id} className="border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div key={cert._id} className="border rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:p-4">
                 <div>
                   <p className="font-medium text-gray-900">{cert.contentId?.title || "Certificate"}</p>
                   <p className="text-sm text-gray-500 mt-1">
@@ -367,26 +367,26 @@ function AdminDashboard() {
 function StatCard({ label, value, accent = "default" }) {
   if (accent === "brand") {
     return (
-      <div className="rounded-3xl bg-[linear-gradient(135deg,#0f172a_0%,#1e3a8a_55%,#0f766e_100%)] p-5 text-white shadow-sm">
-        <p className="text-sm text-cyan-100">{label}</p>
-        <h2 className="mt-2 break-words text-3xl font-semibold">{value}</h2>
+      <div className="rounded-2xl bg-[linear-gradient(135deg,#0f172a_0%,#1e3a8a_55%,#0f766e_100%)] p-3 text-white shadow-sm sm:rounded-3xl sm:p-5">
+        <p className="text-xs text-cyan-100 sm:text-sm">{label}</p>
+        <h2 className="mt-1 break-words text-2xl font-semibold sm:mt-2 sm:text-3xl">{value}</h2>
       </div>
     );
   }
 
   return (
-    <div className="bg-white p-5 rounded-3xl border shadow-sm">
-      <p className="text-sm text-gray-500">{label}</p>
-      <h2 className="text-2xl font-semibold text-blue-950 mt-2 break-words">{value}</h2>
+    <div className="bg-white p-3 rounded-2xl border shadow-sm sm:p-5 sm:rounded-3xl">
+      <p className="text-xs text-gray-500 sm:text-sm">{label}</p>
+      <h2 className="mt-1 break-words text-xl font-semibold text-blue-950 sm:mt-2 sm:text-2xl">{value}</h2>
     </div>
   );
 }
 
 function ProfileRow({ label, value }) {
   return (
-    <div className="rounded-2xl bg-gray-50 border px-4 py-4">
+    <div className="rounded-xl bg-gray-50 border px-3 py-3 sm:rounded-2xl sm:px-4 sm:py-4">
       <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">{label}</p>
-      <p className="text-gray-900">{value || "Not set"}</p>
+      <p className="break-words text-sm text-gray-900 sm:text-base">{value || "Not set"}</p>
     </div>
   );
 }
