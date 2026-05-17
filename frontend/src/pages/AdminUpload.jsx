@@ -38,9 +38,11 @@ const emptyForm = {
 export default function AdminUpload() {
   const [form, setForm] = useState(emptyForm);
   const [message, setMessage] = useState("");
+  const [uploadSuccess, setUploadSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
   const [content, setContent] = useState([]);
   const [deletingId, setDeletingId] = useState("");
+  const [editingId, setEditingId] = useState("");
 
   const fetchAdminData = async () => {
     try {
@@ -82,23 +84,84 @@ export default function AdminUpload() {
     }));
   };
 
+  const totalModuleMinutes = form.modules.reduce(
+    (total, module) => total + (Number(module.estimatedMinutes) || 0),
+    0
+  );
+
+  const formatDateInput = (value) => {
+    if (!value) {
+      return "";
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return "";
+    }
+
+    return date.toISOString().slice(0, 10);
+  };
+
+  const startEditing = (item) => {
+    setMessage("");
+    setUploadSuccess(null);
+    setEditingId(item._id);
+    setForm({
+      title: item.title || "",
+      description: item.description || "",
+      discipline: item.discipline || "",
+      topic: item.topic || "",
+      speaker: item.speaker || "",
+      summary: item.summary || "",
+      keywords: Array.isArray(item.keywords) ? item.keywords.join(", ") : "",
+      eventDate: formatDateInput(item.eventDate),
+      fileUrl: item.fileUrl || "",
+      contentType: item.contentType || "video",
+      learningMode: item.learningMode || "session",
+      credits: item.credits ?? 5,
+      minCompletionMinutes: item.minCompletionMinutes ?? 10,
+      isLiveEvent: Boolean(item.isLiveEvent),
+      primaryAsset: null,
+      thumbnailAsset: null,
+      attachments: [],
+      modules: (item.modules || []).map((module) => ({
+        _id: module._id,
+        title: module.title || "",
+        content: module.content || "",
+        resourceUrl: module.resourceUrl || "",
+        estimatedMinutes: module.estimatedMinutes || 5
+      }))
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const resetForm = () => {
+    setForm(emptyForm);
+    setEditingId("");
+    setMessage("");
+  };
+
   const submit = async () => {
     if (!form.title || !form.contentType) {
+      setUploadSuccess(null);
       setMessage("Title and content type are required");
       return;
     }
 
     if (
+      !editingId &&
       form.learningMode === "session" &&
       !form.fileUrl &&
       !form.primaryAsset &&
       form.attachments.length === 0
     ) {
+      setUploadSuccess(null);
       setMessage("Add an upload or external URL for a session");
       return;
     }
 
     if (form.learningMode === "course" && form.modules.length === 0) {
+      setUploadSuccess(null);
       setMessage("Add at least one module for a course");
       return;
     }
@@ -106,6 +169,7 @@ export default function AdminUpload() {
     try {
       setLoading(true);
       setMessage("");
+      setUploadSuccess(null);
 
       const payload = new FormData();
       payload.append("title", form.title);
@@ -136,17 +200,27 @@ export default function AdminUpload() {
         payload.append("attachments", file);
       });
 
-      await API.post("/content", payload, {
+      const requestConfig = {
         headers: {
           "Content-Type": "multipart/form-data"
         }
-      });
+      };
+      const uploadedContent = editingId
+        ? await API.put(`/content/${editingId}`, payload, requestConfig)
+        : await API.post("/content", payload, requestConfig);
 
-      setMessage("Content uploaded successfully");
+      setUploadSuccess({
+        id: uploadedContent?._id || "",
+        title: uploadedContent?.title || form.title,
+        contentType: uploadedContent?.contentType || form.contentType,
+        action: editingId ? "updated" : "added"
+      });
       setForm(emptyForm);
+      setEditingId("");
       await fetchAdminData();
     } catch (err) {
-      setMessage(err?.message || "Upload failed");
+      setUploadSuccess(null);
+      setMessage(err?.message || (editingId ? "Update failed" : "Upload failed"));
     } finally {
       setLoading(false);
     }
@@ -157,6 +231,9 @@ export default function AdminUpload() {
       setDeletingId(contentId);
       setMessage("");
       await API.delete(`/content/${contentId}`);
+      if (editingId === contentId) {
+        resetForm();
+      }
       setMessage("Content deleted successfully");
       await fetchAdminData();
     } catch (err) {
@@ -168,6 +245,13 @@ export default function AdminUpload() {
 
   return (
     <div className="min-h-screen bg-gray-100 px-4 sm:px-6 py-8">
+      {uploadSuccess && (
+        <UploadSuccessDialog
+          upload={uploadSuccess}
+          onClose={() => setUploadSuccess(null)}
+        />
+      )}
+
       <div className="max-w-7xl mx-auto space-y-6">
         <section className="bg-white border rounded-3xl shadow-sm p-6 sm:p-8">
           <p className="text-cyan-700 uppercase tracking-[0.22em] text-xs mb-3">Admin Dashboard</p>
@@ -185,7 +269,27 @@ export default function AdminUpload() {
 
         <section className="grid xl:grid-cols-[1.2fr_0.8fr] gap-6">
           <div className="bg-white p-6 sm:p-8 rounded-3xl border shadow-sm">
-            <h2 className="text-2xl font-semibold mb-6">Upload CME Content</h2>
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold">
+                  {editingId ? "Edit CME Content" : "Upload CME Content"}
+                </h2>
+                {editingId && (
+                  <p className="mt-1 text-sm text-blue-900">
+                    Editing existing content. Add modules below, then save changes.
+                  </p>
+                )}
+              </div>
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel edit
+                </button>
+              )}
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input label="Title" value={form.title} onChange={(value) => handleChange("title", value)} />
@@ -236,12 +340,21 @@ export default function AdminUpload() {
               </label>
 
               <Input label="Credits" value={form.credits} onChange={(value) => handleChange("credits", value)} type="number" />
-              <Input
-                label="Minimum learning time (minutes)"
-                value={form.minCompletionMinutes}
-                onChange={(value) => handleChange("minCompletionMinutes", value)}
-                type="number"
-              />
+              {form.learningMode === "session" ? (
+                <Input
+                  label="Minimum learning time (minutes)"
+                  value={form.minCompletionMinutes}
+                  onChange={(value) => handleChange("minCompletionMinutes", value)}
+                  type="number"
+                />
+              ) : (
+                <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-950">
+                  <span className="block text-gray-600">Total course learning time</span>
+                  <span className="mt-1 block font-medium">
+                    {totalModuleMinutes || 0} minutes from module timings
+                  </span>
+                </div>
+              )}
 
               <div className="sm:col-span-2">
                 <Input label="External URL (optional)" value={form.fileUrl} onChange={(value) => handleChange("fileUrl", value)} />
@@ -370,7 +483,9 @@ export default function AdminUpload() {
               disabled={loading}
               className="w-full mt-6 bg-blue-900 text-white py-3 rounded-xl hover:bg-blue-800 transition"
             >
-              {loading ? "Uploading..." : "Upload Content"}
+              {loading
+                ? editingId ? "Saving..." : "Uploading..."
+                : editingId ? "Save Changes" : "Upload Content"}
             </button>
           </div>
 
@@ -389,6 +504,11 @@ export default function AdminUpload() {
                     <p className="text-gray-500 mt-1">
                       {item.discipline || "Discipline not set"} | {item.learningMode || "session"}
                     </p>
+                    {item.learningMode === "course" && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        {(item.modules || []).length} modules
+                      </p>
+                    )}
                     <div className="flex flex-wrap gap-3 mt-3">
                       <a
                         href={`/content/${item._id}`}
@@ -396,6 +516,13 @@ export default function AdminUpload() {
                       >
                         View content
                       </a>
+                      <button
+                        type="button"
+                        onClick={() => startEditing(item)}
+                        className="inline-flex text-blue-900"
+                      >
+                        Edit / add modules
+                      </button>
                       <button
                         type="button"
                         onClick={() => deleteContentItem(item._id)}
@@ -430,5 +557,41 @@ function Input({ label, value, onChange, type = "text", placeholder = "" }) {
         className="border px-3 py-3 rounded-xl text-sm"
       />
     </label>
+  );
+}
+
+function UploadSuccessDialog({ upload, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4">
+      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+        <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-2xl text-green-700">
+          ✓
+        </div>
+        <h2 className="text-xl font-semibold text-gray-900">Upload complete</h2>
+        <p className="mt-2 text-sm leading-6 text-gray-600">
+          {upload.title} has been {upload.action === "updated" ? "updated" : "added"} in the CME library.
+        </p>
+        <p className="mt-3 rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-600">
+          Type: {upload.contentType || "content"}
+        </p>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          {upload.id && (
+            <a
+              href={`/content/${upload.id}`}
+              className="inline-flex flex-1 items-center justify-center rounded-xl bg-blue-900 px-4 py-3 text-sm font-medium text-white hover:bg-blue-800"
+            >
+              View content
+            </a>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex flex-1 items-center justify-center rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Upload another
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

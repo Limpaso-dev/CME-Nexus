@@ -49,12 +49,20 @@ const parseModules = (value) => {
   }
 
   return rawValue
-    .map((module) => ({
-      title: String(module.title || "").trim(),
-      content: String(module.content || "").trim(),
-      resourceUrl: String(module.resourceUrl || "").trim(),
-      estimatedMinutes: Math.max(1, Number(module.estimatedMinutes) || 5)
-    }))
+    .map((module) => {
+      const parsedModule = {
+        title: String(module.title || "").trim(),
+        content: String(module.content || "").trim(),
+        resourceUrl: String(module.resourceUrl || "").trim(),
+        estimatedMinutes: Math.max(1, Number(module.estimatedMinutes) || 5)
+      };
+
+      if (mongoose.Types.ObjectId.isValid(module._id)) {
+        parsedModule._id = module._id;
+      }
+
+      return parsedModule;
+    })
     .filter((module) => module.title);
 };
 

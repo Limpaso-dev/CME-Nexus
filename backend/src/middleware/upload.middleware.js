@@ -12,8 +12,12 @@ const allowedMimeTypes = new Set([
   "video/quicktime",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-word.document.macroEnabled.12",
   "application/vnd.ms-powerpoint",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/vnd.ms-powerpoint.presentation.macroEnabled.12",
+  "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
+  "application/vnd.ms-powerpoint.slideshow.macroEnabled.12"
 ]);
 
 const fileFilter = (_req, file, cb) => {

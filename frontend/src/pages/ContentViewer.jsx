@@ -35,11 +35,29 @@ const getDocumentViewerSrc = (asset) => {
 
   const mimeType = asset.mimeType || "";
   if (mimeType.includes("pdf") || asset.contentType === "pdf") {
-    const separator = asset.url.includes("#") ? "&" : "#";
-    return `${asset.url}${separator}toolbar=0&navpanes=0`;
+    return "";
   }
 
   return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(asset.url)}`;
+};
+
+const isPdfDocument = (asset) => {
+  const mimeType = asset?.mimeType || "";
+  const title = asset?.title || "";
+
+  return mimeType.includes("pdf") || asset?.contentType === "pdf" || /\.pdf$/i.test(title);
+};
+
+const isOfficeDocument = (asset) => {
+  const mimeType = asset?.mimeType || "";
+  const title = asset?.title || "";
+
+  return (
+    mimeType.includes("word") ||
+    mimeType.includes("powerpoint") ||
+    mimeType.includes("presentation") ||
+    /\.(doc|docx|ppt|pptx)$/i.test(title)
+  );
 };
 
 export default function ContentViewer() {
@@ -101,7 +119,24 @@ export default function ContentViewer() {
   );
 
   const completedModuleIds = progress?.completedModuleIds || [];
+  const unlockedModuleIds = useMemo(
+    () =>
+      moduleIds.filter((moduleId, index) =>
+        index === 0 ||
+        completedModuleIds.includes(moduleIds[index - 1]) ||
+        completedModuleIds.includes(moduleId)
+      ),
+    [completedModuleIds, moduleIds]
+  );
   const allModulesRead = moduleIds.length === 0 || moduleIds.every((moduleId) => completedModuleIds.includes(moduleId));
+  const firstUnlockedModuleId = useMemo(() => {
+    if (!moduleIds.length) {
+      return "";
+    }
+
+    const nextIncompleteId = moduleIds.find((moduleId) => !completedModuleIds.includes(moduleId));
+    return nextIncompleteId || moduleIds[moduleIds.length - 1];
+  }, [completedModuleIds, moduleIds]);
   const primaryResourceUrl = resolveAssetUrl(content?.primaryAsset?.url || content?.fileUrl);
   const hasPrimaryResource = Boolean(primaryResourceUrl);
   const primaryViewerAsset = hasPrimaryResource
@@ -120,11 +155,14 @@ export default function ContentViewer() {
       return;
     }
 
-    const preferredModuleId = progress?.lastReadModuleId || moduleIds[0] || "";
+    const preferredModuleId =
+      progress?.lastReadModuleId && unlockedModuleIds.includes(progress.lastReadModuleId)
+        ? progress.lastReadModuleId
+        : firstUnlockedModuleId || "";
     if (preferredModuleId) {
       setActiveModuleId(preferredModuleId);
     }
-  }, [activeModuleId, content, isAdminViewer, moduleIds, progress?.lastReadModuleId]);
+  }, [activeModuleId, content, firstUnlockedModuleId, isAdminViewer, progress?.lastReadModuleId, unlockedModuleIds]);
 
   useEffect(() => {
     if (isAdminViewer || !content) {
@@ -139,6 +177,11 @@ export default function ContentViewer() {
       try {
         if (content.learningMode === "course") {
           if (!activeModuleId || completedModuleIds.includes(activeModuleId)) {
+            return;
+          }
+
+          if (!unlockedModuleIds.includes(activeModuleId)) {
+            setActiveModuleId(firstUnlockedModuleId);
             return;
           }
 
@@ -166,7 +209,7 @@ export default function ContentViewer() {
     }, TRACKING_INTERVAL_SECONDS * 1000);
 
     return () => window.clearInterval(timer);
-  }, [activeModuleId, completedModuleIds, content, id, isAdminViewer, progress?.completed]);
+  }, [activeModuleId, completedModuleIds, content, firstUnlockedModuleId, id, isAdminViewer, progress?.completed, unlockedModuleIds]);
 
   const markComplete = async () => {
     try {
@@ -298,6 +341,7 @@ export default function ContentViewer() {
               {content.modules.map((module, index) => {
                 const moduleId = String(module._id);
                 const isRead = completedModuleIds.includes(moduleId);
+                const isUnlocked = unlockedModuleIds.includes(moduleId);
                 const moduleProgress = progress?.moduleProgress?.find((entry) => entry.moduleId === moduleId);
                 const requiredModuleSeconds = (module.estimatedMinutes || 5) * 60;
                 const trackedModuleSeconds = moduleProgress?.secondsSpent || 0;
@@ -319,16 +363,23 @@ export default function ContentViewer() {
                       </div>
                       {!isAdminViewer && (
                         <button
-                          onClick={() => setActiveModuleId(moduleId)}
+                          onClick={() => {
+                            if (isUnlocked) {
+                              setActiveModuleId(moduleId);
+                            }
+                          }}
+                          disabled={!isUnlocked}
                           className={`px-4 py-2 rounded-xl text-sm ${
-                            isActive
+                            !isUnlocked
+                              ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                              : isActive
                               ? "bg-blue-900 text-white"
                               : isRead
                                 ? "bg-green-100 text-green-800"
                                 : "bg-cyan-500 text-blue-950 hover:bg-cyan-400"
                           }`}
                         >
-                          {isActive ? "Tracking now" : isRead ? "Completed" : "Start learning"}
+                          {!isUnlocked ? "Locked" : isActive ? "Tracking now" : isRead ? "Completed" : "Start learning"}
                         </button>
                       )}
                     </div>
@@ -348,10 +399,12 @@ export default function ContentViewer() {
                     )}
 
                     <p className="text-sm text-gray-700 leading-6 mt-4 whitespace-pre-wrap">
-                      {module.content || "No module reading text provided."}
+                      {isAdminViewer || isUnlocked
+                        ? module.content || "No module reading text provided."
+                        : "Complete the previous module to unlock this topic."}
                     </p>
 
-                    {module.resourceUrl && (
+                    {(isAdminViewer || isUnlocked) && module.resourceUrl && (
                       <a
                         href={resolveAssetUrl(module.resourceUrl)}
                         target="_blank"
@@ -562,6 +615,49 @@ export default function ContentViewer() {
 
 function DocumentViewer({ asset, onClose }) {
   const viewerSrc = getDocumentViewerSrc(asset);
+  const pdfDocument = isPdfDocument(asset);
+  const officeDocument = isOfficeDocument(asset);
+  const [pdfUrl, setPdfUrl] = useState("");
+  const [pdfError, setPdfError] = useState("");
+
+  useEffect(() => {
+    if (!pdfDocument || !asset?.url) {
+      setPdfUrl("");
+      setPdfError("");
+      return undefined;
+    }
+
+    let objectUrl = "";
+    const controller = new AbortController();
+
+    const loadPdf = async () => {
+      try {
+        setPdfError("");
+        const response = await fetch(asset.url, { signal: controller.signal });
+
+        if (!response.ok) {
+          throw new Error(`Could not load PDF (${response.status})`);
+        }
+
+        const blob = await response.blob();
+        objectUrl = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
+        setPdfUrl(`${objectUrl}#toolbar=0&navpanes=0`);
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          setPdfError(err.message || "Could not load PDF preview");
+        }
+      }
+    };
+
+    loadPdf();
+
+    return () => {
+      controller.abort();
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [asset?.url, pdfDocument]);
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 px-3 py-4 sm:px-6">
@@ -579,12 +675,31 @@ function DocumentViewer({ asset, onClose }) {
             Close
           </button>
         </div>
-        {viewerSrc ? (
-          <iframe
-            src={viewerSrc}
-            title={asset.title || "Document viewer"}
-            className="h-full w-full flex-1 border-0"
-          />
+        {pdfDocument ? (
+          pdfUrl ? (
+            <iframe
+              src={pdfUrl}
+              title={asset.title || "PDF viewer"}
+              className="h-full w-full flex-1 border-0"
+            />
+          ) : (
+            <div className="flex flex-1 items-center justify-center p-6 text-sm text-gray-500">
+              {pdfError || "Loading PDF preview..."}
+            </div>
+          )
+        ) : viewerSrc ? (
+          <>
+            {officeDocument && (
+              <div className="border-b bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                PowerPoint and Word previews depend on Microsoft Office Viewer being able to access the uploaded file URL. If the preview stays blank, convert the file to PDF before uploading for reliable in-platform viewing.
+              </div>
+            )}
+            <iframe
+              src={viewerSrc}
+              title={asset.title || "Document viewer"}
+              className="h-full w-full flex-1 border-0"
+            />
+          </>
         ) : (
           <div className="flex flex-1 items-center justify-center p-6 text-sm text-gray-500">
             This file cannot be previewed.
