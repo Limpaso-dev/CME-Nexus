@@ -181,27 +181,27 @@ function AdminDashboard() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-100 px-4 sm:px-6 py-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <section className="rounded-[2rem] bg-[linear-gradient(135deg,#0f172a_0%,#1e3a8a_55%,#0f766e_100%)] text-white p-6 sm:p-8 shadow-sm">
-          <p className="text-cyan-200 uppercase tracking-[0.22em] text-xs mb-3">Admin Command Center</p>
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+    <div className="min-h-screen bg-slate-100 px-4 py-6 sm:px-6 sm:py-8">
+      <div className="max-w-7xl mx-auto space-y-5 sm:space-y-8">
+        <section className="rounded-2xl bg-[linear-gradient(135deg,#0f172a_0%,#1e3a8a_55%,#0f766e_100%)] text-white p-5 sm:rounded-[2rem] sm:p-8 shadow-sm">
+          <p className="text-cyan-200 uppercase tracking-[0.22em] text-xs mb-2 sm:mb-3">Admin Command Center</p>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-6">
             <div>
-              <h1 className="text-3xl font-semibold mb-3">Welcome {localStorage.getItem("name") || "Admin"}.</h1>
-              <p className="text-blue-100 max-w-3xl">
+              <h1 className="text-2xl font-semibold mb-2 sm:mb-3 sm:text-3xl">Welcome {localStorage.getItem("name") || "Admin"}.</h1>
+              <p className="text-sm text-blue-100 max-w-3xl sm:text-base">
                 Track the overall state of CME Nexus, monitor content activity, review user growth, and keep the platform organized from one professional system view.
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:gap-3">
               <Link
                 to="/admin"
-                className="bg-white text-blue-950 px-5 py-3 rounded-xl font-medium hover:bg-blue-50 transition text-center"
+                className="bg-white text-blue-950 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-50 transition text-center sm:px-5 sm:py-3 sm:text-base"
               >
                 Open Upload Workspace
               </Link>
               <Link
                 to="/library"
-                className="border border-white/60 px-5 py-3 rounded-xl hover:bg-white hover:text-blue-950 transition text-center"
+                className="border border-white/60 px-3 py-2.5 rounded-xl text-sm hover:bg-white hover:text-blue-950 transition text-center sm:px-5 sm:py-3 sm:text-base"
               >
                 Review Live Library
               </Link>
@@ -215,7 +215,7 @@ function AdminDashboard() {
           </div>
         )}
 
-        <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <section className="grid grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-4">
           <AdminStatCard label="Total Users" value={data?.totalUsers} accent="blue" loading={loading} />
           <AdminStatCard label="Active Learners" value={data?.totalLearners} accent="cyan" loading={loading} />
           <AdminStatCard label="Admins" value={data?.totalAdmins} accent="slate" loading={loading} />
@@ -226,16 +226,16 @@ function AdminDashboard() {
           <AdminStatCard label="Live Events" value={data?.totalLiveEvents} accent="emerald" loading={loading} />
         </section>
 
-        <section className="grid xl:grid-cols-[1.1fr_0.9fr] gap-6">
-          <div className="bg-white rounded-3xl border shadow-sm p-6 sm:p-8">
-            <div className="flex items-center justify-between gap-4 mb-5">
+        <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr] xl:gap-6">
+          <div className="bg-white rounded-2xl border shadow-sm p-4 sm:rounded-3xl sm:p-8">
+            <div className="flex items-center justify-between gap-4 mb-4 sm:mb-5">
               <div>
-                <h2 className="text-xl font-semibold">Operational Summary</h2>
-                <p className="text-sm text-gray-500 mt-1">A quick view of system-wide progress and learning output.</p>
+                <h2 className="text-lg font-semibold sm:text-xl">Operational Summary</h2>
+                <p className="hidden text-sm text-gray-500 mt-1 sm:block">A quick view of system-wide progress and learning output.</p>
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4">
               <InsightCard
                 label="Completed Sessions"
                 value={data?.completedSessions}
@@ -250,15 +250,15 @@ function AdminDashboard() {
               />
             </div>
 
-            <div className="mt-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Content Mix</h3>
-              <div className="space-y-3">
+            <div className="mt-5 sm:mt-6">
+              <h3 className="font-semibold text-gray-900 mb-3 sm:mb-4">Content Mix</h3>
+              <div className="space-y-2 sm:space-y-3">
                 {loading && Array.from({ length: 3 }).map((_, index) => (
                   <div key={index} className="h-12 rounded-2xl bg-gray-100 animate-pulse" />
                 ))}
 
                 {!loading && (data?.contentByType || []).map((item) => (
-                  <div key={item._id} className="flex items-center justify-between rounded-2xl border bg-slate-50 px-4 py-3">
+                  <div key={item._id} className="flex items-center justify-between rounded-xl border bg-slate-50 px-3 py-2.5 sm:rounded-2xl sm:px-4 sm:py-3">
                     <span className="capitalize text-gray-700">{item._id || "unspecified"}</span>
                     <span className="font-semibold text-blue-950">{item.count}</span>
                   </div>
@@ -271,15 +271,15 @@ function AdminDashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl border shadow-sm p-6 sm:p-8">
-            <h2 className="text-xl font-semibold mb-5">Top Disciplines</h2>
-            <div className="space-y-3">
+          <div className="bg-white rounded-2xl border shadow-sm p-4 sm:rounded-3xl sm:p-8">
+            <h2 className="text-lg font-semibold mb-4 sm:mb-5 sm:text-xl">Top Disciplines</h2>
+            <div className="space-y-2 sm:space-y-3">
               {loading && Array.from({ length: 5 }).map((_, index) => (
                 <div key={index} className="h-12 rounded-2xl bg-gray-100 animate-pulse" />
               ))}
 
               {!loading && (data?.contentByDiscipline || []).map((item) => (
-                <div key={item._id} className="flex items-center justify-between rounded-2xl border bg-slate-50 px-4 py-3">
+                <div key={item._id} className="flex items-center justify-between rounded-xl border bg-slate-50 px-3 py-2.5 sm:rounded-2xl sm:px-4 sm:py-3">
                   <span className="text-gray-700">{item._id}</span>
                   <span className="font-semibold text-blue-950">{item.count}</span>
                 </div>
@@ -292,22 +292,22 @@ function AdminDashboard() {
           </div>
         </section>
 
-        <section className="grid lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-3xl border shadow-sm p-6 sm:p-8">
-            <div className="flex items-center justify-between mb-5">
+        <section className="grid gap-4 lg:grid-cols-2 lg:gap-6">
+          <div className="bg-white rounded-2xl border shadow-sm p-4 sm:rounded-3xl sm:p-8">
+            <div className="flex items-center justify-between mb-4 sm:mb-5">
               <div>
-                <h2 className="text-xl font-semibold">Recent Users</h2>
-                <p className="text-sm text-gray-500 mt-1">Newest accounts joining the platform.</p>
+                <h2 className="text-lg font-semibold sm:text-xl">Recent Users</h2>
+                <p className="hidden text-sm text-gray-500 mt-1 sm:block">Newest accounts joining the platform.</p>
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {loading && Array.from({ length: 4 }).map((_, index) => (
                 <div key={index} className="h-16 rounded-2xl bg-gray-100 animate-pulse" />
               ))}
 
               {!loading && (data?.recentUsers || []).map((user) => (
-                <div key={user._id} className="rounded-2xl border p-4">
+                <div key={user._id} className="rounded-2xl border p-3 sm:p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="font-medium text-gray-900">{user.name}</p>
@@ -322,24 +322,24 @@ function AdminDashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl border shadow-sm p-6 sm:p-8">
-            <div className="flex items-center justify-between mb-5">
+          <div className="bg-white rounded-2xl border shadow-sm p-4 sm:rounded-3xl sm:p-8">
+            <div className="flex items-center justify-between gap-3 mb-4 sm:mb-5">
               <div>
-                <h2 className="text-xl font-semibold">Recent Content Activity</h2>
-                <p className="text-sm text-gray-500 mt-1">Latest library additions and admin-managed content.</p>
+                <h2 className="text-lg font-semibold sm:text-xl">Recent Content Activity</h2>
+                <p className="hidden text-sm text-gray-500 mt-1 sm:block">Latest library additions and admin-managed content.</p>
               </div>
               <Link to="/admin" className="text-sm text-cyan-700 hover:underline">
                 Manage content
               </Link>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {loading && Array.from({ length: 4 }).map((_, index) => (
                 <div key={index} className="h-16 rounded-2xl bg-gray-100 animate-pulse" />
               ))}
 
               {!loading && (data?.recentContent || []).map((item) => (
-                <div key={item._id} className="rounded-2xl border p-4">
+                <div key={item._id} className="rounded-2xl border p-3 sm:p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-medium text-gray-900">{item.title}</p>
@@ -401,13 +401,13 @@ function AdminStatCard({ label, value, loading, accent }) {
   };
 
   return (
-    <div className={`rounded-3xl p-[1px] bg-gradient-to-br ${accents[accent] || accents.blue}`}>
-      <div className="bg-white rounded-[calc(1.5rem-1px)] p-5 h-full">
-        <p className="text-sm text-gray-500">{label}</p>
+    <div className={`rounded-2xl p-[1px] bg-gradient-to-br sm:rounded-3xl ${accents[accent] || accents.blue}`}>
+      <div className="bg-white rounded-[calc(1rem-1px)] p-3 h-full sm:rounded-[calc(1.5rem-1px)] sm:p-5">
+        <p className="text-xs text-gray-500 sm:text-sm">{label}</p>
         {loading ? (
-          <div className="h-8 w-20 mt-3 rounded bg-gray-100 animate-pulse" />
+          <div className="h-7 w-16 mt-2 rounded bg-gray-100 animate-pulse sm:mt-3 sm:h-8 sm:w-20" />
         ) : (
-          <h2 className="text-3xl font-semibold text-slate-900 mt-2">{value ?? "-"}</h2>
+          <h2 className="mt-1 text-2xl font-semibold text-slate-900 sm:mt-2 sm:text-3xl">{value ?? "-"}</h2>
         )}
       </div>
     </div>
@@ -416,14 +416,14 @@ function AdminStatCard({ label, value, loading, accent }) {
 
 function InsightCard({ label, value, description, loading }) {
   return (
-    <div className="rounded-3xl border bg-slate-50 p-5">
-      <p className="text-sm text-gray-500">{label}</p>
+    <div className="rounded-2xl border bg-slate-50 p-3 sm:rounded-3xl sm:p-5">
+      <p className="text-xs text-gray-500 sm:text-sm">{label}</p>
       {loading ? (
-        <div className="h-7 w-16 mt-3 rounded bg-gray-200 animate-pulse" />
+        <div className="h-6 w-14 mt-2 rounded bg-gray-200 animate-pulse sm:mt-3 sm:h-7 sm:w-16" />
       ) : (
-        <p className="text-2xl font-semibold text-slate-900 mt-2">{value ?? "-"}</p>
+        <p className="mt-1 text-xl font-semibold text-slate-900 sm:mt-2 sm:text-2xl">{value ?? "-"}</p>
       )}
-      <p className="text-sm text-gray-500 mt-3">{description}</p>
+      <p className="hidden text-sm text-gray-500 mt-3 sm:block">{description}</p>
     </div>
   );
 }

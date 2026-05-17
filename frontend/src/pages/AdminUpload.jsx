@@ -244,7 +244,7 @@ export default function AdminUpload() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 px-4 sm:px-6 py-8">
+    <div className="min-h-screen bg-gray-100 px-4 py-6 sm:px-6 sm:py-8">
       {uploadSuccess && (
         <UploadSuccessDialog
           upload={uploadSuccess}
@@ -252,11 +252,11 @@ export default function AdminUpload() {
         />
       )}
 
-      <div className="max-w-7xl mx-auto space-y-6">
-        <section className="bg-white border rounded-3xl shadow-sm p-6 sm:p-8">
-          <p className="text-cyan-700 uppercase tracking-[0.22em] text-xs mb-3">Admin Dashboard</p>
-          <h1 className="text-3xl font-semibold text-gray-900 mb-3">Upload session files, supporting assets, and structured courses.</h1>
-          <p className="text-gray-600 max-w-3xl">
+      <div className="max-w-7xl mx-auto space-y-5 sm:space-y-6">
+        <section className="bg-white border rounded-2xl shadow-sm p-5 sm:rounded-3xl sm:p-8">
+          <p className="text-cyan-700 uppercase tracking-[0.22em] text-xs mb-2 sm:mb-3">Admin Dashboard</p>
+          <h1 className="text-2xl font-semibold leading-tight text-gray-900 mb-2 sm:mb-3 sm:text-3xl">Upload session files, supporting assets, and structured courses.</h1>
+          <p className="text-sm text-gray-600 max-w-3xl sm:text-base">
             Admins can now attach uploaded videos, PDFs, images, and supporting files, keep an external URL when available, and build course-style content with ordered modules.
           </p>
         </section>
@@ -267,11 +267,11 @@ export default function AdminUpload() {
           </div>
         )}
 
-        <section className="grid xl:grid-cols-[1.2fr_0.8fr] gap-6">
-          <div className="bg-white p-6 sm:p-8 rounded-3xl border shadow-sm">
-            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr] xl:gap-6">
+          <div className="bg-white p-4 sm:p-8 rounded-2xl sm:rounded-3xl border shadow-sm">
+            <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-2xl font-semibold">
+                <h2 className="text-xl font-semibold sm:text-2xl">
                   {editingId ? "Edit CME Content" : "Upload CME Content"}
                 </h2>
                 {editingId && (
@@ -291,7 +291,7 @@ export default function AdminUpload() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4">
               <Input label="Title" value={form.title} onChange={(value) => handleChange("title", value)} />
               <Input label="Speaker" value={form.speaker} onChange={(value) => handleChange("speaker", value)} />
               <label className="flex flex-col gap-2 text-sm">
@@ -299,7 +299,7 @@ export default function AdminUpload() {
                 <select
                   value={form.discipline}
                   onChange={(e) => handleChange("discipline", e.target.value)}
-                  className="border px-3 py-3 rounded-xl text-sm"
+                  className="border px-3 py-2.5 rounded-xl text-sm sm:py-3"
                 >
                   <option value="">Select discipline</option>
                   {disciplines.map((discipline) => (
@@ -318,7 +318,7 @@ export default function AdminUpload() {
                 <select
                   value={form.contentType}
                   onChange={(e) => handleChange("contentType", e.target.value)}
-                  className="border px-3 py-3 rounded-xl text-sm"
+                  className="border px-3 py-2.5 rounded-xl text-sm sm:py-3"
                 >
                   <option value="video">Recorded video</option>
                   <option value="pdf">Slide deck or PDF</option>
@@ -332,7 +332,7 @@ export default function AdminUpload() {
                 <select
                   value={form.learningMode}
                   onChange={(e) => handleChange("learningMode", e.target.value)}
-                  className="border px-3 py-3 rounded-xl text-sm"
+                  className="border px-3 py-2.5 rounded-xl text-sm sm:py-3"
                 >
                   <option value="session">Single session</option>
                   <option value="course">Course with modules</option>
@@ -356,7 +356,7 @@ export default function AdminUpload() {
                 </div>
               )}
 
-              <div className="sm:col-span-2">
+              <div className="col-span-2">
                 <Input label="External URL (optional)" value={form.fileUrl} onChange={(value) => handleChange("fileUrl", value)} />
               </div>
             </div>
@@ -366,8 +366,8 @@ export default function AdminUpload() {
               <textarea
                 value={form.description}
                 onChange={(e) => handleChange("description", e.target.value)}
-                rows={4}
-                className="border px-3 py-3 rounded-xl text-sm w-full mt-2"
+                rows={3}
+                className="border px-3 py-2.5 rounded-xl text-sm w-full mt-2 sm:py-3"
               />
             </label>
 
@@ -376,19 +376,19 @@ export default function AdminUpload() {
               <textarea
                 value={form.summary}
                 onChange={(e) => handleChange("summary", e.target.value)}
-                rows={4}
-                className="border px-3 py-3 rounded-xl text-sm w-full mt-2"
+                rows={3}
+                className="border px-3 py-2.5 rounded-xl text-sm w-full mt-2 sm:py-3"
               />
             </label>
 
-            <div className="grid sm:grid-cols-2 gap-4 mt-4">
+            <div className="grid grid-cols-1 gap-3 mt-4 sm:grid-cols-2 sm:gap-4">
               <label className="flex flex-col gap-2 text-sm">
                 <span className="text-gray-600">Thumbnail / course graphic</span>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => handleChange("thumbnailAsset", e.target.files?.[0] || null)}
-                  className="border px-3 py-3 rounded-xl text-sm"
+                  className="border px-3 py-2.5 rounded-xl text-sm sm:py-3"
                 />
               </label>
 
@@ -398,7 +398,7 @@ export default function AdminUpload() {
                   type="file"
                   accept="image/*,video/*,.pdf,.doc,.docx,.ppt,.pptx"
                   onChange={(e) => handleChange("primaryAsset", e.target.files?.[0] || null)}
-                  className="border px-3 py-3 rounded-xl text-sm"
+                  className="border px-3 py-2.5 rounded-xl text-sm sm:py-3"
                 />
               </label>
 
@@ -409,7 +409,7 @@ export default function AdminUpload() {
                   multiple
                   accept="image/*,video/*,.pdf,.doc,.docx,.ppt,.pptx"
                   onChange={(e) => handleChange("attachments", e.target.files || [])}
-                  className="border px-3 py-3 rounded-xl text-sm"
+                  className="border px-3 py-2.5 rounded-xl text-sm sm:py-3"
                 />
               </label>
             </div>
@@ -423,11 +423,11 @@ export default function AdminUpload() {
               This is a live CME event that should later be archived
             </label>
 
-            <div className="mt-8 border-t pt-6">
+            <div className="mt-6 border-t pt-5 sm:mt-8 sm:pt-6">
               <div className="flex items-center justify-between gap-4 mb-4">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900">Course Modules</h3>
-                  <p className="text-sm text-gray-600">Use these when the content is a course rather than a single session.</p>
+                  <h3 className="text-lg font-semibold text-gray-900 sm:text-xl">Course Modules</h3>
+                  <p className="hidden text-sm text-gray-600 sm:block">Use these when the content is a course rather than a single session.</p>
                 </div>
                 <button
                   type="button"
@@ -440,7 +440,7 @@ export default function AdminUpload() {
 
               <div className="space-y-4">
                 {form.modules.map((module, index) => (
-                  <div key={index} className="border rounded-2xl p-4 bg-gray-50">
+                  <div key={index} className="border rounded-2xl p-3 bg-gray-50 sm:p-4">
                     <div className="flex justify-between items-center mb-3">
                       <p className="font-medium text-gray-900">Module {index + 1}</p>
                       <button
@@ -466,7 +466,7 @@ export default function AdminUpload() {
                           value={module.content}
                           onChange={(e) => updateModule(index, "content", e.target.value)}
                           rows={5}
-                          className="border px-3 py-3 rounded-xl text-sm w-full mt-2"
+                        className="border px-3 py-2.5 rounded-xl text-sm w-full mt-2 sm:py-3"
                         />
                       </label>
                     </div>
@@ -489,17 +489,17 @@ export default function AdminUpload() {
             </button>
           </div>
 
-          <div className="bg-white p-6 rounded-3xl border shadow-sm">
+          <div className="bg-white p-4 rounded-2xl border shadow-sm sm:p-6 sm:rounded-3xl">
               <div className="flex items-center justify-between gap-4 mb-4">
                 <div>
-                  <h2 className="text-xl font-semibold">Manage Uploaded Content</h2>
-                  <p className="text-sm text-gray-500 mt-1">Review, open, and delete uploaded sessions and courses.</p>
+                  <h2 className="text-lg font-semibold sm:text-xl">Manage Uploaded Content</h2>
+                  <p className="hidden text-sm text-gray-500 mt-1 sm:block">Review, open, and delete uploaded sessions and courses.</p>
                 </div>
                 <p className="text-sm text-gray-500">{content.length} items</p>
               </div>
               <div className="space-y-3 text-sm">
                 {content.map((item) => (
-                  <div key={item._id} className="border rounded-2xl p-4">
+                  <div key={item._id} className="border rounded-2xl p-3 sm:p-4">
                     <p className="font-medium text-gray-900">{item.title}</p>
                     <p className="text-gray-500 mt-1">
                       {item.discipline || "Discipline not set"} | {item.learningMode || "session"}
@@ -545,16 +545,16 @@ export default function AdminUpload() {
   );
 }
 
-function Input({ label, value, onChange, type = "text", placeholder = "" }) {
+function Input({ label, value, onChange, type = "text", placeholder = "", className = "" }) {
   return (
-    <label className="flex flex-col gap-2 text-sm">
+    <label className={`flex flex-col gap-2 text-sm ${className}`}>
       <span className="text-gray-600">{label}</span>
       <input
         type={type}
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="border px-3 py-3 rounded-xl text-sm"
+        className="border px-3 py-2.5 rounded-xl text-sm sm:py-3"
       />
     </label>
   );
