@@ -28,6 +28,20 @@ const formatDuration = (seconds) => {
   return `${minutes} min ${remainder}s`;
 };
 
+const getDocumentViewerSrc = (asset) => {
+  if (!asset?.url) {
+    return "";
+  }
+
+  const mimeType = asset.mimeType || "";
+  if (mimeType.includes("pdf") || asset.contentType === "pdf") {
+    const separator = asset.url.includes("#") ? "&" : "#";
+    return `${asset.url}${separator}toolbar=0&navpanes=0`;
+  }
+
+  return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(asset.url)}`;
+};
+
 export default function ContentViewer() {
   const { id } = useParams();
   const role = localStorage.getItem("role");
@@ -41,6 +55,7 @@ export default function ContentViewer() {
   const [feedback, setFeedback] = useState("");
   const [progress, setProgress] = useState(null);
   const [activeModuleId, setActiveModuleId] = useState("");
+  const [viewerAsset, setViewerAsset] = useState(null);
 
   const fetchDiscussion = async () => {
     const discussionRes = await API.get(`/discussions/${id}`);
@@ -89,6 +104,14 @@ export default function ContentViewer() {
   const allModulesRead = moduleIds.length === 0 || moduleIds.every((moduleId) => completedModuleIds.includes(moduleId));
   const primaryResourceUrl = resolveAssetUrl(content?.primaryAsset?.url || content?.fileUrl);
   const hasPrimaryResource = Boolean(primaryResourceUrl);
+  const primaryViewerAsset = hasPrimaryResource
+    ? {
+        url: primaryResourceUrl,
+        title: content?.primaryAsset?.originalName || content?.title || "Learning file",
+        mimeType: content?.primaryAsset?.mimeType || "",
+        contentType: content?.contentType || ""
+      }
+    : null;
   const requiredSessionSeconds = (content?.minCompletionMinutes || 10) * 60;
   const sessionSecondsSpent = progress?.engagementSeconds || 0;
 
@@ -351,11 +374,16 @@ export default function ContentViewer() {
               )}
 
               {content.contentType === "pdf" && primaryResourceUrl && (
-                <iframe
-                  src={primaryResourceUrl}
-                  className="w-full h-[420px] sm:h-[560px] mb-6 border rounded-2xl"
-                  title={content.title}
-                />
+                <div className="rounded-2xl bg-gray-50 border p-6 mb-6">
+                  <p className="text-sm text-gray-600 mb-3">This session includes a PDF file.</p>
+                  <button
+                    type="button"
+                    onClick={() => setViewerAsset(primaryViewerAsset)}
+                    className="inline-flex bg-blue-900 text-white px-4 py-2 rounded-xl hover:bg-blue-800"
+                  >
+                    Open in viewer
+                  </button>
+                </div>
               )}
 
               {content.contentType === "notes" && primaryResourceUrl && (
@@ -371,6 +399,19 @@ export default function ContentViewer() {
                   </a>
                 </div>
               )}
+
+              {content.contentType === "document" && primaryResourceUrl && (
+                <div className="rounded-2xl bg-gray-50 border p-6 mb-6">
+                  <p className="text-sm text-gray-600 mb-3">This session includes a document or presentation file.</p>
+                  <button
+                    type="button"
+                    onClick={() => setViewerAsset(primaryViewerAsset)}
+                    className="inline-flex bg-blue-900 text-white px-4 py-2 rounded-xl hover:bg-blue-800"
+                  >
+                    Open in viewer
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -378,19 +419,34 @@ export default function ContentViewer() {
             <div className="rounded-2xl border p-5 mb-6">
               <h3 className="font-semibold text-gray-900 mb-3">Supporting Files</h3>
               <div className="space-y-2 text-sm">
-                {content.attachments.map((asset, index) => (
-                  <a
-                    key={`${asset.url}-${index}`}
-                    href={resolveAssetUrl(asset.url)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block text-cyan-700"
-                  >
-                    {asset.originalName || `Attachment ${index + 1}`}
-                  </a>
-                ))}
+                {content.attachments.map((asset, index) => {
+                  const resolvedAsset = {
+                    ...asset,
+                    url: resolveAssetUrl(asset.url),
+                    title: asset.originalName || `Attachment ${index + 1}`,
+                    contentType: asset.mimeType?.includes("pdf") ? "pdf" : "document"
+                  };
+
+                  return (
+                    <button
+                      key={`${asset.url}-${index}`}
+                      type="button"
+                      onClick={() => setViewerAsset(resolvedAsset)}
+                      className="block text-left text-cyan-700 hover:underline"
+                    >
+                      {asset.originalName || `Attachment ${index + 1}`}
+                    </button>
+                  );
+                })}
               </div>
             </div>
+          )}
+
+          {viewerAsset && (
+            <DocumentViewer
+              asset={viewerAsset}
+              onClose={() => setViewerAsset(null)}
+            />
           )}
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -412,21 +468,19 @@ export default function ContentViewer() {
                 Mark as completed
               </button>
             )}
-            {content.contentType === "pdf" ? (
-              <a
-                href={hasPrimaryResource ? primaryResourceUrl : undefined}
-                target={hasPrimaryResource ? "_blank" : undefined}
-                rel={hasPrimaryResource ? "noreferrer" : undefined}
-                download={hasPrimaryResource ? true : undefined}
-                aria-disabled={!hasPrimaryResource}
+            {content.contentType === "pdf" || content.contentType === "document" ? (
+              <button
+                type="button"
+                onClick={() => setViewerAsset(primaryViewerAsset)}
+                disabled={!hasPrimaryResource}
                 className={`px-5 py-3 rounded-xl transition text-center ${
                   hasPrimaryResource
                     ? "border border-blue-200 text-blue-900 hover:bg-blue-50"
-                    : "bg-gray-200 text-gray-500 cursor-not-allowed pointer-events-none"
+                    : "bg-gray-200 text-gray-500 cursor-not-allowed"
                 }`}
               >
-                Download PDF
-              </a>
+                Open in viewer
+              </button>
             ) : content.contentType === "notes" ? (
               <a
                 href={hasPrimaryResource ? primaryResourceUrl : undefined}
@@ -501,6 +555,41 @@ export default function ContentViewer() {
             )}
           </div>
         </section>
+      </div>
+    </div>
+  );
+}
+
+function DocumentViewer({ asset, onClose }) {
+  const viewerSrc = getDocumentViewerSrc(asset);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-950/80 px-3 py-4 sm:px-6">
+      <div className="mx-auto flex h-full max-w-7xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between gap-4 border-b px-4 py-3 sm:px-5">
+          <div>
+            <p className="text-sm font-medium text-gray-900">{asset.title || "Document viewer"}</p>
+            <p className="text-xs text-gray-500">In-platform viewer</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl border px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            Close
+          </button>
+        </div>
+        {viewerSrc ? (
+          <iframe
+            src={viewerSrc}
+            title={asset.title || "Document viewer"}
+            className="h-full w-full flex-1 border-0"
+          />
+        ) : (
+          <div className="flex flex-1 items-center justify-center p-6 text-sm text-gray-500">
+            This file cannot be previewed.
+          </div>
+        )}
       </div>
     </div>
   );

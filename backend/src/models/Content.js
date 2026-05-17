@@ -161,7 +161,7 @@ const contentSchema = new mongoose.Schema(
 
     contentType: {
       type: String,
-      enum: ["video", "pdf", "notes"],
+      enum: ["video", "pdf", "document", "notes"],
       required: true
     },
 

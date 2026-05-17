@@ -10,6 +10,8 @@ const allowedMimeTypes = new Set([
   "video/mp4",
   "video/webm",
   "video/quicktime",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/vnd.ms-powerpoint",
   "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 ]);

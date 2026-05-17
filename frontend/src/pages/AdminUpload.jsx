@@ -1,7 +1,19 @@
 import { useEffect, useState } from "react";
-import API, { resolveAssetUrl } from "../services/api";
+import API from "../services/api";
 
 const emptyModule = { title: "", content: "", resourceUrl: "", estimatedMinutes: 5 };
+const disciplines = [
+  "Hematology",
+  "Microbiology",
+  "Chemistry",
+  "Molecular Diagnostics",
+  "Lab Management & Quality Assurance",
+  "POCT",
+  "Parasitology",
+  "Lab Automation",
+  "Bio Safety & Bio Security"
+];
+
 const emptyForm = {
   title: "",
   description: "",
@@ -178,7 +190,21 @@ export default function AdminUpload() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input label="Title" value={form.title} onChange={(value) => handleChange("title", value)} />
               <Input label="Speaker" value={form.speaker} onChange={(value) => handleChange("speaker", value)} />
-              <Input label="Discipline" value={form.discipline} onChange={(value) => handleChange("discipline", value)} />
+              <label className="flex flex-col gap-2 text-sm">
+                <span className="text-gray-600">Discipline</span>
+                <select
+                  value={form.discipline}
+                  onChange={(e) => handleChange("discipline", e.target.value)}
+                  className="border px-3 py-3 rounded-xl text-sm"
+                >
+                  <option value="">Select discipline</option>
+                  {disciplines.map((discipline) => (
+                    <option key={discipline} value={discipline}>
+                      {discipline}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <Input label="Topic" value={form.topic} onChange={(value) => handleChange("topic", value)} />
               <Input label="Keywords" value={form.keywords} onChange={(value) => handleChange("keywords", value)} placeholder="ELISA, PCR, Blood Transfusion" />
               <Input label="Event Date" value={form.eventDate} onChange={(value) => handleChange("eventDate", value)} type="date" />
@@ -192,6 +218,7 @@ export default function AdminUpload() {
                 >
                   <option value="video">Recorded video</option>
                   <option value="pdf">Slide deck or PDF</option>
+                  <option value="document">Word document or PowerPoint</option>
                   <option value="notes">Notes and summary</option>
                 </select>
               </label>
@@ -256,7 +283,7 @@ export default function AdminUpload() {
                 <span className="text-gray-600">Primary file upload</span>
                 <input
                   type="file"
-                  accept="image/*,video/*,.pdf,.ppt,.pptx"
+                  accept="image/*,video/*,.pdf,.doc,.docx,.ppt,.pptx"
                   onChange={(e) => handleChange("primaryAsset", e.target.files?.[0] || null)}
                   className="border px-3 py-3 rounded-xl text-sm"
                 />
@@ -267,7 +294,7 @@ export default function AdminUpload() {
                 <input
                   type="file"
                   multiple
-                  accept="image/*,video/*,.pdf,.ppt,.pptx"
+                  accept="image/*,video/*,.pdf,.doc,.docx,.ppt,.pptx"
                   onChange={(e) => handleChange("attachments", e.target.files || [])}
                   className="border px-3 py-3 rounded-xl text-sm"
                 />
@@ -369,16 +396,6 @@ export default function AdminUpload() {
                       >
                         View content
                       </a>
-                      {(item.primaryAsset?.url || item.fileUrl) && item.contentType !== "video" && (
-                        <a
-                          href={resolveAssetUrl(item.primaryAsset?.url || item.fileUrl)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex text-blue-900"
-                        >
-                          Open resource
-                        </a>
-                      )}
                       <button
                         type="button"
                         onClick={() => deleteContentItem(item._id)}

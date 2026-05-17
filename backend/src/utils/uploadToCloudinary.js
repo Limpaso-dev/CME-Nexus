@@ -1,5 +1,5 @@
 import { Readable } from "stream";
-import cloudinary from "../config/cloudinary.js";
+import cloudinary, { configureCloudinary } from "../config/cloudinary.js";
 
 const ensureCloudinaryConfig = () => {
   if (
@@ -9,6 +9,8 @@ const ensureCloudinaryConfig = () => {
   ) {
     throw new Error("Cloudinary environment variables are missing");
   }
+
+  configureCloudinary();
 };
 
 const getResourceType = (mimeType = "") => {
@@ -16,7 +18,7 @@ const getResourceType = (mimeType = "") => {
     return "video";
   }
 
-  if (mimeType.startsWith("image/") || mimeType === "application/pdf" || mimeType === "application/x-pdf") {
+  if (mimeType.startsWith("image/")) {
     return "image";
   }
 

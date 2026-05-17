@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import Content from "../models/Content.js";
 import { uploadBufferToCloudinary } from "../utils/uploadToCloudinary.js";
 
-const CONTENT_TYPES = new Set(["video", "pdf", "notes"]);
+const CONTENT_TYPES = new Set(["video", "pdf", "document", "notes"]);
 const LEARNING_MODES = new Set(["session", "course"]);
 
 const parseBoolean = (value) => {
@@ -120,7 +120,7 @@ const validateContentPayload = (payload, { partial = false } = {}) => {
 
   if (payload.contentType !== undefined) {
     if (!CONTENT_TYPES.has(payload.contentType)) {
-      errors.push("contentType must be one of video, pdf, or notes");
+      errors.push("contentType must be one of video, pdf, document, or notes");
     } else {
       data.contentType = payload.contentType;
     }

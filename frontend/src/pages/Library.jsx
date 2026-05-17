@@ -6,11 +6,12 @@ const disciplines = [
   "Hematology",
   "Microbiology",
   "Chemistry",
-  "Molecular Biology",
-  "Lab Management",
-  "Quality Assurance",
+  "Molecular Diagnostics",
+  "Lab Management & Quality Assurance",
+  "POCT",
   "Parasitology",
-  "Lab Automation"
+  "Lab Automation",
+  "Bio Safety & Bio Security",
 ];
 
 const formatDate = (value) => {
@@ -180,6 +181,7 @@ export default function Library() {
               <option value="">All content types</option>
               <option value="video">Recorded videos</option>
               <option value="pdf">Slide decks</option>
+              <option value="document">Documents and presentations</option>
               <option value="notes">Notes</option>
             </select>
             <FilterInput
