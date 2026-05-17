@@ -41,9 +41,9 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Invalid email address" });
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       return res.status(400).json({
-        message: "Password must be at least 6 characters"
+        message: "Password must be at least 8 characters"
       });
     }
 
@@ -85,12 +85,12 @@ export const login = async (req, res) => {
     const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
-      return res.status(400).json({ message: "User not found" });
+      return res.status(400).json({ message: "Invalid email or password" });
     }
 
     const match = await bcrypt.compare(password, user.password);
     if (!match) {
-      return res.status(400).json({ message: "Invalid password" });
+      return res.status(400).json({ message: "Invalid email or password" });
     }
 
     const payload = {

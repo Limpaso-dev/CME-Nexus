@@ -7,16 +7,24 @@ import progressRoutes from "./routes/progress.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
 import certificateRoutes from "./routes/certificate.routes.js";
 import discussionRoutes from "./routes/discussion.routes.js";
+import { rateLimit, securityHeaders } from "./middleware/security.middleware.js";
 
 const app = express();
+
+app.set("trust proxy", 1);
+app.disable("x-powered-by");
+app.use(securityHeaders);
 
 /**
  * ✅ CORS CONFIG (SAFE + FLEXIBLE)
  */
 const allowedOrigins = [
   "http://localhost:5173",
-  process.env.FRONTEND_URL
-].filter(Boolean); // removes undefined
+  ...(process.env.FRONTEND_URL || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+];
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -38,7 +46,7 @@ app.use(cors({
 /**
  * ✅ BODY PARSER
  */
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 
 /**
  * ✅ SIMPLE LOGGER (VERY USEFUL)
@@ -51,6 +59,14 @@ app.use((req, res, next) => {
 /**
  * ✅ ROUTES
  */
+app.use(
+  "/api/auth/login",
+  rateLimit({ max: 20, message: "Too many login attempts. Try again later." })
+);
+app.use(
+  "/api/auth/register",
+  rateLimit({ max: 10, message: "Too many registration attempts. Try again later." })
+);
 app.use("/api/auth", authRoutes);
 app.use("/api/content", contentRoutes);
 app.use("/api/progress", progressRoutes);
