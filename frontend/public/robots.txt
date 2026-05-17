@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /content
+
+Sitemap: https://cme-nexus.vercel.app/sitemap.xml

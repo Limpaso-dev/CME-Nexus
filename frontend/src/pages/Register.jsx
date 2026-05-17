@@ -20,6 +20,11 @@ export default function Register() {
       return;
     }
 
+    if (form.password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+
     try {
       setLoading(true);
       setError("");
@@ -80,10 +85,12 @@ export default function Register() {
             <input
               type="password"
               placeholder="Password"
+              minLength={8}
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               className="w-full border px-3 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-900"
             />
+            <p className="mt-2 text-xs text-gray-500">Use at least 8 characters.</p>
           </div>
         </div>
 

@@ -15,6 +15,7 @@ import Contact from "./pages/Contact";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import Seo from "./components/Seo";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -73,6 +74,7 @@ function RoutesRenderer() {
 function App() {
   return (
     <BrowserRouter>
+      <Seo />
       <ScrollToTop />
       <AppLayout />
     </BrowserRouter>
