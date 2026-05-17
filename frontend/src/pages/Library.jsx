@@ -120,7 +120,7 @@ export default function Library() {
           </div>
         </section>
 
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
           {disciplines.map((discipline) => {
             const active = filters.discipline === discipline;
 
@@ -128,14 +128,14 @@ export default function Library() {
               <button
                 key={discipline}
                 onClick={() => updateFilter("discipline", active ? "" : discipline)}
-                className={`rounded-2xl border px-4 py-4 text-left transition ${
+                className={`min-h-14 rounded-xl border px-3 py-2 text-left text-sm transition sm:min-h-0 sm:rounded-2xl sm:px-4 sm:py-4 sm:text-base ${
                   active
                     ? "border-blue-950 bg-blue-950 text-white shadow-md"
                     : "bg-white hover:border-cyan-400 hover:shadow-sm"
                 }`}
               >
-                <p className="font-medium">{discipline}</p>
-                <p className={`mt-1 text-xs ${active ? "text-blue-100" : "text-slate-500"}`}>
+                <p className="font-medium leading-tight">{discipline}</p>
+                <p className={`mt-1 hidden text-xs sm:block ${active ? "text-blue-100" : "text-slate-500"}`}>
                   Discipline filter
                 </p>
               </button>

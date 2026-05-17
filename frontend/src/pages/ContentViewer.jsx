@@ -619,9 +619,21 @@ function DocumentViewer({ asset, onClose }) {
   const officeDocument = isOfficeDocument(asset);
   const [pdfUrl, setPdfUrl] = useState("");
   const [pdfError, setPdfError] = useState("");
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
 
   useEffect(() => {
-    if (!pdfDocument || !asset?.url) {
+    const updateViewport = () => {
+      setIsMobileViewport(window.matchMedia("(max-width: 767px)").matches);
+    };
+
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
+
+  useEffect(() => {
+    if (!pdfDocument || !asset?.url || isMobileViewport) {
       setPdfUrl("");
       setPdfError("");
       return undefined;
@@ -657,7 +669,7 @@ function DocumentViewer({ asset, onClose }) {
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [asset?.url, pdfDocument]);
+  }, [asset?.url, isMobileViewport, pdfDocument]);
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 px-3 py-4 sm:px-6">
@@ -676,12 +688,33 @@ function DocumentViewer({ asset, onClose }) {
           </button>
         </div>
         {pdfDocument ? (
-          pdfUrl ? (
-            <iframe
-              src={pdfUrl}
+          isMobileViewport ? (
+            <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
+              <p className="max-w-sm text-sm leading-6 text-gray-600">
+                Mobile browsers often block embedded PDF previews. Open this PDF in your phone's document viewer.
+              </p>
+              <a
+                href={asset.url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-5 inline-flex rounded-xl bg-blue-900 px-5 py-3 text-sm font-medium text-white hover:bg-blue-800"
+              >
+                Open PDF
+              </a>
+            </div>
+          ) : pdfUrl ? (
+            <object
+              data={pdfUrl}
+              type="application/pdf"
               title={asset.title || "PDF viewer"}
-              className="h-full w-full flex-1 border-0"
-            />
+              className="h-full w-full flex-1"
+            >
+              <iframe
+                src={pdfUrl}
+                title={asset.title || "PDF viewer"}
+                className="h-full w-full flex-1 border-0"
+              />
+            </object>
           ) : (
             <div className="flex flex-1 items-center justify-center p-6 text-sm text-gray-500">
               {pdfError || "Loading PDF preview..."}
